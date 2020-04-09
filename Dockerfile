@@ -16,7 +16,8 @@ RUN pip install pip -U  -i https://pypi.tuna.tsinghua.edu.cn/simple  # update pi
 ADD requirements.txt /code/
 RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
+# copy the source code file to  code directory
+ADD . /code/
 
-ADD . /code/ # copy the source code file to  code directory
-
-
+RUN python manage.py db init
+RUN python manage.py db upgrade
