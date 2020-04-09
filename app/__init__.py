@@ -82,7 +82,10 @@ def index():
             DOMAIN_NAME = app.config['DOMAIN_NAME']
             PORT = app.config['PORT']
             HTTP = app.config['HTTP']
-            full_shorten_url = '{http}://{domain_name}:{port}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
+            if PORT == 80:
+                full_shorten_url = '{http}://{domain_name}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
+            else:
+                full_shorten_url = '{http}://{domain_name}:{port}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
 
             # 保存
             try:

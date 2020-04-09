@@ -43,9 +43,8 @@ class BaseConfig(object):
     COS_BUCKET = env_config.get('COS_BUCKET')
     COS_APPID = env_config.get('COS_APPID')
     DOMAIN_NAME = env_config.get('DOMAIN_NAME')
-    PORT = env_config.get('PORT') or os.environ.get('APP_PORT') or '8000'
+    PORT = env_config.get('PORT') or os.environ.get('APP_PORT') or 8000
     HTTP = env_config.get('HTTP') or os.environ.get('HTTP')
-
 
 
 class ProductionConfig(BaseConfig):
