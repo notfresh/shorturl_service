@@ -1,0 +1,33 @@
+version: "3"
+services:
+  app:
+    restart: always
+    # where the app Dockerfile locates, the . means current dir
+    build: .
+    command: "gunicorn -c gunicorn.py manage:app"
+    volumes:
+      - .:/code
+    expose:
+      - "8000"
+    networks:
+      - web_network
+
+  nginx:
+    restart: always
+    image: nginx:latest
+    ports:
+    - "8000:8000"
+    volumes:
+    - ./config/nginx:/etc/nginx/conf.d
+    depends_on:
+    - app
+    networks:
+    - web_network
+
+networks:
+  web_network:
+    driver: bridge
+  db_network:
+    driver: bridge
+
+
