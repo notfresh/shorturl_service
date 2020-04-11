@@ -19,5 +19,5 @@ RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 # copy the source code file to  code directory
 ADD . /code/
 
-RUN python manage.py db upgrade
+# RUN python manage.py db upgrade
 

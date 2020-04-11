@@ -45,6 +45,8 @@ class BaseConfig(object):
     DOMAIN_NAME = env_config.get('DOMAIN_NAME')
     PORT = env_config.get('PORT') or os.environ.get('APP_PORT') or 8000
     HTTP = env_config.get('HTTP') or os.environ.get('HTTP')
+    REDIS_URL = env_config.get('REDIS_URL') or "redis://:@localhost:6379/0"
+
 
 
 class ProductionConfig(BaseConfig):

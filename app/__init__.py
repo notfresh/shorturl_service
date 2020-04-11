@@ -5,6 +5,7 @@ import random
 from flask import Flask, render_template, flash
 from flask_wtf import Form
 from flask_bootstrap import Bootstrap
+from flask_redis import FlaskRedis
 
 from werkzeug.utils import redirect
 from wtforms import StringField, SubmitField
@@ -17,6 +18,7 @@ from .models import ShortURL, db
 
 app = Flask(__name__)
 
+redis_client = FlaskRedis()
 
 def create_app(flask_config='development', **kwargs):
     config_name = os.getenv('FLASK_ENV', flask_config)
@@ -35,6 +37,7 @@ def create_app(flask_config='development', **kwargs):
 
     bootstrap = Bootstrap(app)
 
+    redis_client.init_app(app)
     return app
 
 
@@ -42,6 +45,7 @@ class TheForm(Form):
     the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
     customize_url = StringField("you can assgin a short name if you like", validators=[Length(min=2, max=16)])
     submit = SubmitField("shorten")
+
 
 def rehash_baseh62(the_url_str):
     ls = [str(item) for item in range(10)]
@@ -126,16 +130,29 @@ def index():
 
 @app.route('/<string:short_url>', methods=['GET'])
 def redirect_short_url(short_url):
-    url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
-    return redirect(url.origin_url)
-    # return '你好'
+    # url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
+    # return redirect(url.origin_url)
+    origin_url = redis_client.get(short_url)
+    if not origin_url:
+        url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
+        origin_url = url.origin_url
+        redis_client.set(short_url, origin_url, 24*3600)
+    return redirect(origin_url)
 
 
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
 def redirect_short_url_with_prefix(short_url, short_url_prefix):
-    url = ShortURL.query.filter_by(shorten_url=short_url_prefix + '/' + short_url).first_or_404()
-    return redirect(url.origin_url)
+    origin_url = redis_client.get(short_url_prefix + '/' + short_url)
+    if not origin_url:
+        url = ShortURL.query.filter_by(shorten_url=short_url_prefix + '/' + short_url).first_or_404()
+        origin_url = url.origin_url
+        redis_client.set(short_url_prefix + '/' + short_url, origin_url, 24*3600)
+    return redirect(origin_url)
 
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 
 
