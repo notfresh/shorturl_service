@@ -11,9 +11,3 @@ class ShortURL(db.Model):
 
     def __repr__(self):
         return "URL origin %s, shorten %s" % self.origin_url[:16], self.shorten_url
-
-
-
-
-
-

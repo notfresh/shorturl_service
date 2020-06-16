@@ -24,7 +24,6 @@ services:
     depends_on:
       - redis
 
-
   nginx:
     restart: always
     image: nginx:latest
@@ -42,6 +41,9 @@ services:
 networks:
   web_network:
     driver: bridge
+
+
+
 
 
 
