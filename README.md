@@ -171,7 +171,7 @@ def index():
 
 [@notfresh](https://github.com/notfresh)
 
-## 如何共吸纳
+## 如何贡献
 
 PRs accepted.
 
