@@ -35,7 +35,7 @@ class BaseConfig(object):
     SECRET_KEY = env_config.get('SECRET_KEY') or 'this is a very simple backend'
 
     # SQLALCHEMY_DATABASE_URI="mysql+pymysql://{}:{}@{}/{}".format(db_user, db_password, '{}:{}'.format(db_host, db_port), db_name)
-    SQLALCHEMY_DATABASE_URI = env_config.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///' + os.path.join( base_dir, 'app.sqlite')
+    SQLALCHEMY_DATABASE_URI = env_config.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///' + os.path.join(base_dir, 'app.sqlite')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     COS_SECRETID = env_config.get('COS_SECRET_ID')
     COS_SECRETKEY = env_config.get('COS_SECERT_KEEY')
