@@ -1,9 +1,12 @@
 version: "3"
-services:
+
 
 networks:
   web_network:
     driver: bridge
+
+
+services:
 
 #  redis:
 #    restart: always
@@ -40,7 +43,6 @@ networks:
 #    - redis
     networks:
     - web_network
-
 
 
 

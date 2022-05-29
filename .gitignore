@@ -42,3 +42,5 @@ nosetests.xml
 venv
 
 .idea/*
+
+test_socketio/
