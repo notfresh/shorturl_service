@@ -12,3 +12,4 @@ workers = multiprocessing.cpu_count() * 2 + 1
 # 运行脚本的方式
 # gunicorn -c gunicorn.py manage:app
 
+

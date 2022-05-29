@@ -1,14 +1,18 @@
 version: "3"
 services:
 
-  redis:
-    restart: always
-    image: redis:latest
-    command:  redis-server
-    expose:
-    - "6379"
-    networks:
-    - web_network
+networks:
+  web_network:
+    driver: bridge
+
+#  redis:
+#    restart: always
+#    image: redis:latest
+#    command:  redis-server
+#    expose:
+#    - "6379"
+#    networks:
+#    - web_network
 
   app:
     restart: always
@@ -21,8 +25,8 @@ services:
       - "8000"
     networks:
       - web_network
-    depends_on:
-      - redis
+#    depends_on:
+#      - redis
 
   nginx:
     restart: always
@@ -33,14 +37,12 @@ services:
     - ./config/nginx:/etc/nginx/conf.d
     depends_on:
     - app
-    - redis
+#    - redis
     networks:
     - web_network
 
 
-networks:
-  web_network:
-    driver: bridge
+
 
 
 

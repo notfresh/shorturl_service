@@ -14,7 +14,7 @@ from wtforms.validators import DataRequired, URL, Length
 from config import CONFIGS
 
 import sqlalchemy as sa
-from .models import ShortURL, db
+from .models import ShortURL, db, User
 
 app = Flask(__name__)
 
@@ -36,6 +36,11 @@ def create_app(flask_config='development', **kwargs):
 
 
 class TheForm(Form):
+    the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
+    customize_url = StringField("you can assgin a short name if you like", validators=[Length(min=2, max=16)])
+    submit = SubmitField("shorten")
+
+class DeleteForm(Form):
     the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
     customize_url = StringField("you can assgin a short name if you like", validators=[Length(min=2, max=16)])
     submit = SubmitField("shorten")
@@ -64,6 +69,7 @@ def rehash_baseh62(the_url_str):
 def index():
     default_shorten_url = 'Default random'
     form = TheForm(customize_url=default_shorten_url)
+    urls = ShortURL.query.all()
     if form.validate_on_submit():
 
         the_url = form.the_url.data
@@ -112,8 +118,13 @@ def index():
                             the_url += ('?randomk=' + str(random.random()))
             except Exception as e:
                 return render_template('500.html'), 500
-        return render_template('index.html', form=form, shorten_url=make_full_url(app, shorten_url))
-    return render_template('index.html', form=form)
+        return render_template('index.html', form=form, shorten_url=make_full_url(app, shorten_url), urls=urls)
+    return render_template('index.html', form=form,urls=urls)
+
+# @app.route("/delete", methods="POST")
+# def delete_short_url(shorten_url):
+#     pass
+
 
 
 def make_full_url(app, shorten_url):

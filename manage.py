@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 from sqlalchemy import func
-from app import create_app
+from app import create_app,ShortURL, User
 from app.db import db
 
 app = create_app('development')
 manager = Manager(app)
 
 def make_shell_context():
-    return dict(app=app, db=db)
+    return dict(app=app, db=db, ShortURL=ShortURL, User=User)
 
 manager.add_command('shell', Shell(make_context=make_shell_context))
 
