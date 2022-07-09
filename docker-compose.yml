@@ -34,7 +34,7 @@ services:
     image: nginx:latest
     ports:
     - "80:8000"
-    - "443:8000"
+    - "443:443"
     volumes:
     - ./config/nginx:/etc/nginx/conf.d
     - ./config/https-cert:/etc/nginx/certs
