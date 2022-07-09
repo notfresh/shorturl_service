@@ -43,6 +43,8 @@ services:
 #    - redis
     networks:
     - web_network
+    tty: true
+    stdin_open: true
 
 
 
