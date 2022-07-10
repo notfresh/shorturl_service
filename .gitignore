@@ -44,3 +44,5 @@ venv
 .idea/*
 
 test_socketio/
+
+app.sqlite

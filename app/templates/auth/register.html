@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Short URL - Register{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Register</h1>
+</div>
+<div class="row">
+<div class="col-md-6">
+    <h3>
+        This is a private short url service, register and memorize your own urls easier.
+    </h3>
+    <h3>
+         Hope you Enjoy it.
+    </h3>
+
+</div>
+<div class="col-md-4">
+    {{ wtf.quick_form(form) }}
+</div>
+</div>
+{% endblock %}

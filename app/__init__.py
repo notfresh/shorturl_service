@@ -3,9 +3,13 @@ import os
 import random
 
 from flask import Flask, render_template, flash
+from flask_login import LoginManager, login_required
+from flask_mail import Mail
 from flask_wtf import Form
 from flask_bootstrap import Bootstrap
 from flask_redis import FlaskRedis
+from flask_login import current_user
+from flask_login import UserMixin, AnonymousUserMixin
 
 from werkzeug.utils import redirect
 from wtforms import StringField, SubmitField
@@ -19,6 +23,11 @@ from .models import ShortURL, db, User
 app = Flask(__name__)
 
 # redis_client = FlaskRedis()
+mail = Mail()
+
+login_manager = LoginManager()
+login_manager.session_protection = 'strong'
+login_manager.login_view = 'auth.login'
 
 
 def create_app(flask_config='development', **kwargs):
@@ -32,7 +41,22 @@ def create_app(flask_config='development', **kwargs):
     db.init_app(app)
     bootstrap = Bootstrap(app)
     # redis_client.init_app(app)
+    login_manager.init_app(app)
+    mail.init_app(app)
+
+    from .auth import auth as auth_blueprint
+    app.register_blueprint(auth_blueprint, url_prefix='/auth')
+
     return app
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+class AnonymousUser(AnonymousUserMixin):
+    pass
+
+login_manager.anonymous_user = AnonymousUser
 
 
 class TheForm(Form):
@@ -66,12 +90,15 @@ def rehash_baseh62(the_url_str):
 
 
 @app.route('/', methods=['POST', 'GET'])
+@login_required
 def index():
     default_shorten_url = 'Default random'
     form = TheForm(customize_url=default_shorten_url)
-    urls = ShortURL.query.all()
+    if current_user.is_authenticated:
+        urls = ShortURL.query.filter_by(created_by=current_user.username).all()
+    else:
+        urls = []
     if form.validate_on_submit():
-
         the_url = form.the_url.data
         customize_url = form.customize_url.data
         full_shorten_url = ''
@@ -82,7 +109,7 @@ def index():
             # saved_shorten_url = ShortURL.query.filter_by(origin_url)
             else:
                 shorten_url = customize_url
-            url = ShortURL(origin_url=the_url, shorten_url=shorten_url)
+            url = ShortURL(origin_url=the_url, shorten_url=shorten_url,created_by=current_user.username)
             # 保存
             try:
                 # 试探着保存,如果保存成功, 那么跳出循环
@@ -126,12 +153,12 @@ def index():
 #     pass
 
 
-
 def make_full_url(app, shorten_url):
     DOMAIN_NAME = app.config['DOMAIN_NAME']
     PORT = app.config['PORT']
     HTTP = app.config['HTTP']
-    if PORT == 80:
+    environ = app.config["ENVIRON"]
+    if environ == "production":
         full_shorten_url = '{http}://{domain_name}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
     else:
         full_shorten_url = '{http}://{domain_name}:{port}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
@@ -139,6 +166,7 @@ def make_full_url(app, shorten_url):
 
 
 @app.route('/<string:short_url>', methods=['GET'])
+@login_required
 def redirect_short_url(short_url):
     url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
     return redirect(url.origin_url)
@@ -149,7 +177,7 @@ def redirect_short_url(short_url):
     #     redis_client.set(short_url, origin_url, 24*3600)
     # return redirect(origin_url)
 
-
+@login_required
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
 def redirect_short_url_with_prefix(short_url, short_url_prefix):
     # origin_url = redis_client.get(short_url_prefix + '/' + short_url)

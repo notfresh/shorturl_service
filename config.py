@@ -45,8 +45,15 @@ class BaseConfig(object):
     DOMAIN_NAME = env_config.get('DOMAIN_NAME')
     PORT = env_config.get('PORT') or os.environ.get('APP_PORT') or 8000
     HTTP = env_config.get('HTTP') or os.environ.get('HTTP')
+    ENVIRON = env_config.get('ENVIRON') or "dev"
     REDIS_URL = env_config.get('REDIS_URL') or "redis://:@localhost:6379/0"
-
+    MAIL_SERVER = "smtp.qq.com"
+    MAIL_PORT = "465"
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'YOUR EMAIL'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'YOUR EMAIL TOKEN'
+    MAIL_SUBJECT_PREFIX = "ShortUrl<shorturl@foxmail.com>"
+    MAIL_SENDER = "ShortUrl Team"
 
 
 class ProductionConfig(BaseConfig):
