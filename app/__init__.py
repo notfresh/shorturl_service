@@ -12,7 +12,7 @@ from flask_login import current_user
 from flask_login import UserMixin, AnonymousUserMixin
 
 from werkzeug.utils import redirect
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, RadioField
 from wtforms.validators import DataRequired, URL, Length
 
 from config import CONFIGS
@@ -62,6 +62,7 @@ login_manager.anonymous_user = AnonymousUser
 class TheForm(Form):
     the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
     customize_url = StringField("you can assgin a short name if you like", validators=[Length(min=2, max=16)])
+    is_public = RadioField('whether you want to make the shorten url public', choices=[('True', 'Yes'), ('False', 'No')], default='False')
     submit = SubmitField("shorten")
 
 class DeleteForm(Form):
@@ -98,9 +99,16 @@ def index():
         urls = ShortURL.query.filter_by(created_by=current_user.username).all()
     else:
         urls = []
+    print("4444")
     if form.validate_on_submit():
+        print("555")
         the_url = form.the_url.data
         customize_url = form.customize_url.data
+        is_public = form.is_public.data
+        # is_public = False
+        created_by = current_user.username
+        if is_public == 'True':
+            created_by = 'public'
         full_shorten_url = ''
         while True:
             if customize_url == default_shorten_url:
@@ -109,7 +117,7 @@ def index():
             # saved_shorten_url = ShortURL.query.filter_by(origin_url)
             else:
                 shorten_url = customize_url
-            url = ShortURL(origin_url=the_url, shorten_url=shorten_url,created_by=current_user.username)
+            url = ShortURL(origin_url=the_url, shorten_url=shorten_url,created_by=created_by, is_public=is_public)
             # 保存
             try:
                 # 试探着保存,如果保存成功, 那么跳出循环
@@ -145,7 +153,7 @@ def index():
                             the_url += ('?randomk=' + str(random.random()))
             except Exception as e:
                 return render_template('500.html'), 500
-        return render_template('index.html', form=form, shorten_url=make_full_url(app, shorten_url), urls=urls)
+        return render_template('index.html', form=form, shorten_url=make_full_url(app, shorten_url, is_public), urls=urls)
     return render_template('index.html', form=form,urls=urls)
 
 # @app.route("/delete", methods="POST")
@@ -153,11 +161,14 @@ def index():
 #     pass
 
 
-def make_full_url(app, shorten_url):
+def make_full_url(app, shorten_url, is_public='False'):
     DOMAIN_NAME = app.config['DOMAIN_NAME']
     PORT = app.config['PORT']
     HTTP = app.config['HTTP']
     environ = app.config["ENVIRON"]
+    if is_public == 'True':
+        is_public_prefix = 'p/'
+        shorten_url = is_public_prefix + shorten_url
     if environ == "production":
         full_shorten_url = '{http}://{domain_name}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
     else:
@@ -165,10 +176,18 @@ def make_full_url(app, shorten_url):
     return full_shorten_url
 
 
+@app.route('/p/<string:short_url>', methods=['GET'])
+def redirect_public_short_url(short_url):
+    print("public-urls...")
+    url = ShortURL.query.filter_by(shorten_url=short_url, created_by='public').first_or_404()
+    return redirect(url.origin_url)
+
+
 @app.route('/<string:short_url>', methods=['GET'])
 @login_required
 def redirect_short_url(short_url):
-    url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
+    created_by = current_user.username
+    url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()
     return redirect(url.origin_url)
     # origin_url = redis_client.get(short_url)
     # if not origin_url:
@@ -182,7 +201,8 @@ def redirect_short_url(short_url):
 def redirect_short_url_with_prefix(short_url, short_url_prefix):
     # origin_url = redis_client.get(short_url_prefix + '/' + short_url)
     # if not origin_url:
-    url = ShortURL.query.filter_by(shorten_url=short_url_prefix + '/' + short_url).first_or_404()
+    created_by = current_user.username
+    url = ShortURL.query.filter_by(shorten_url=short_url_prefix + '/' + short_url, created_by=created_by).first_or_404()
     origin_url = url.origin_url
     # redis_client.set(short_url_prefix + '/' + short_url, origin_url, 24*3600)
     return redirect(origin_url)

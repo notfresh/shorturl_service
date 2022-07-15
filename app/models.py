@@ -16,6 +16,7 @@ class ShortURL(db.Model):
     shorten_url = db.Column(db.String(32), unique=True) # 务必建立唯一索引
     created_at = db.Column(db.DateTime())  # start_at_desc
     created_by = db.Column(db.Integer)  # owner
+    is_public = db.Column(db.Integer, default=False)  # 是否是公开的网址
 
     def __repr__(self):
         return "URL origin %s, shorten %s" % (self.origin_url[:16], self.shorten_url)
