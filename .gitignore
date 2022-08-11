@@ -46,3 +46,5 @@ venv
 test_socketio/
 
 app.sqlite
+
+env/env.yml

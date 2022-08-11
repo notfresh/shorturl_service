@@ -13,7 +13,8 @@ class ShortURL(db.Model):
     __tablename__ = 'urls'
     id = db.Column(db.Integer, primary_key=True)
     origin_url = db.Column(db.String(256), index=True)
-    shorten_url = db.Column(db.String(32), unique=True) # 务必建立唯一索引
+    shorten_url = db.Column(db.String(32), index=True) # 务必建立唯一索引
+    shorten_url_created_by = db.Column(db.String(64), unique=True) # 务必建立联合唯一索引
     created_at = db.Column(db.DateTime())  # start_at_desc
     created_by = db.Column(db.Integer)  # owner
     is_public = db.Column(db.Integer, default=False)  # 是否是公开的网址
@@ -22,7 +23,7 @@ class ShortURL(db.Model):
         return "URL origin %s, shorten %s" % (self.origin_url[:16], self.shorten_url)
 
 
-class User(db.Model,UserMixin):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(256), index=True)
