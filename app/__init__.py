@@ -100,6 +100,8 @@ def make_public(shorten_url, is_public):
         return shorten_url
     if is_public == True:  # 一定要和True比较,否则会认为判断这个变量是否存在
         shorten_url = 'p/' + shorten_url
+        print("################## public")
+    print("################## public ??", is_public, shorten_url)
     return shorten_url
 
 def clear_public(shorten_url):
@@ -125,7 +127,7 @@ def index():
             if customize_url == default_shorten_url:
                 shorten_url = rehash_baseh62(the_url)  #压缩算法或者自定义短网址，本系统的核心
             else:
-                shorten_url = make_public(customize_url, is_public)
+                shorten_url = make_public(customize_url, form.is_public.data == 'True')
             url = ShortURL(origin_url=the_url, shorten_url=shorten_url,created_by=created_by, is_public=is_public, shorten_url_created_by=shorten_url+"-"+str(created_by))
             # 保存
             try:
@@ -240,7 +242,7 @@ def detail(short_url):
             # saved_shorten_url = ShortURL.query.filter_by(origin_url)
             else:
                 url.origin_url = the_url
-                url.shorten_url = make_public(customize_url, is_public)
+                url.shorten_url = make_public(customize_url, is_public=='True')
                 url.is_public = is_public
                 url.shorten_url_created_by = customize_url+"-"+str(created_by)
             # 保存
