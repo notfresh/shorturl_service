@@ -60,13 +60,13 @@ login_manager.anonymous_user = AnonymousUser
 
 class TheForm(Form):
     the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
-    customize_url = StringField("you can assgin a short name if you like", validators=[Length(min=2, max=16)])
+    customize_url = StringField("you can assgin a short name if you like, input random to generate randomly", validators=[Length(min=2, max=16)])
     is_public = RadioField('whether you want to make the shorten url public', choices=[('True', 'Yes'), ('False', 'No')], default='False')
     submit = SubmitField("shorten")
 
 class UpdateForm(Form):
     the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
-    customize_url = StringField("you can assgin a short name if you like", validators=[Length(min=2, max=16)])
+    customize_url = StringField("you can assgin a short name if you like, input random to generate randomly", validators=[Length(min=2, max=16)])
     is_public = RadioField('whether you want to make the shorten url public', choices=[('True', 'Yes'), ('False', 'No')], default='False')
     submit = SubmitField("Update")
 
@@ -112,7 +112,7 @@ def clear_public(shorten_url):
 @app.route('/', methods=['POST', 'GET'])
 @login_required
 def index():
-    default_shorten_url = 'Default random'
+    default_shorten_url = 'random'
     form = TheForm(customize_url=default_shorten_url)
     if current_user.is_authenticated:
         urls = ShortURL.query.filter_by(created_by=current_user.username).all()
@@ -191,34 +191,13 @@ def redirect_public_short_url(short_url):
     return redirect(url.origin_url)
 
 
-@app.route('/detail/p/<string:short_url>', methods=['GET','POST'])
+@app.route('/detail/<string:prefix>/<string:short_url>', methods=['GET','POST'])
 @login_required
-def detail2Level(short_url):
-    return detail("p/"+short_url)
+def detail2Level(prefix, short_url):
+    print("Hello, I got it!")
+    return extract_f1(prefix+"/"+ short_url)
 
-
-# @app.route('/detail/p/<string:short_url>', methods=['GET','POST'])
-# @login_required
-# def delete2Level(short_url):
-#     return detail("p/"+short_url)
-
-# @app.route('/delete/<string:short_url>', methods=['POST', "GET"])
-# @login_required
-# def delete(short_url):
-#     created_by = current_user.username
-#     url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()
-#     form_delete = DeleteForm(customize_url=url.shorten_url, the_url=url.origin_url)
-#
-#     if form_delete.validate_on_submit():
-#         db.session.delete(url)
-#         db.session.commit()
-#         return redirect(url_for('index'))
-#     return redirect(url_for('index'))
-
-
-@app.route('/detail/<string:short_url>', methods=['GET','POST'])
-@login_required
-def detail(short_url):
+def extract_f1(short_url):
     created_by = current_user.username
     url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()
     form = UpdateForm(customize_url=clear_public(url.shorten_url), the_url=url.origin_url, is_public=url.is_public)
@@ -229,7 +208,7 @@ def detail(short_url):
             db.session.commit()
             return redirect(url_for('index'))
     elif form.validate_on_submit():
-        default_shorten_url = 'Default random'
+        default_shorten_url = 'random'
         the_url = form.the_url.data
         customize_url = clear_public(form.customize_url.data)
         is_public = form.is_public.data
@@ -238,13 +217,14 @@ def detail(short_url):
             if customize_url == default_shorten_url:
                 shorten_url = rehash_baseh62(the_url)  # 压缩算法或者自定义短网址，本系统的核心
                 url.shorten_url = shorten_url
+                url.shorten_url_created_by = shorten_url + "-" + str(created_by)
             # 查询这个网址有没有被压缩
             # saved_shorten_url = ShortURL.query.filter_by(origin_url)
             else:
                 url.origin_url = the_url
-                url.shorten_url = make_public(customize_url, is_public=='True')
+                url.shorten_url = make_public(customize_url, is_public == 'True')
                 url.is_public = is_public
-                url.shorten_url_created_by = customize_url+"-"+str(created_by)
+                url.shorten_url_created_by = customize_url + "-" + str(created_by)
             # 保存
             try:
                 # 试探着保存, 如果保存成功, 那么跳出循环
@@ -282,10 +262,15 @@ def detail(short_url):
                             the_url += ('?randomk=' + str(random.random()))
             except Exception as e:
                 return render_template('500.html'), 500
-        form_index = TheForm(customize_url=default_shorten_url)
-        urls = ShortURL.query.filter_by(created_by=current_user.username).all()
-        return render_template('index.html', form=form_index, shorten_url=make_full_url(app, customize_url, is_public), urls=urls)
-    return render_template('detail.html', form=form,url=url, form_delete=form_delete)
+        return redirect(url_for('index'))
+    return render_template('detail.html', form=form, url=url, form_delete=form_delete)
+
+
+@app.route('/detail/<string:short_url>', methods=['GET','POST'])
+@login_required
+def detail(short_url):
+    return extract_f1(short_url)
+
 
 @app.route('/<string:short_url>', methods=['GET'])
 @login_required

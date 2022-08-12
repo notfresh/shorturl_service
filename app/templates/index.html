@@ -13,8 +13,9 @@
 
 <h1>Existing shortened urls </h1>
     {% for url in urls %}
-shortened is <a href="{{url.origin_url}}" target="_blank">{{ url.shorten_url }}</a>, origin {{ url.origin_url }}, you can edit it at <a href="{{ url_for('detail', short_url=url.shorten_url)}}"
-                                                                                                                                        target="_blank"> [{{
+shortened is <a href="{{url.origin_url}}" target="_blank">{{ url.shorten_url }}</a>, origin {{ url.origin_url }}, you can edit it at
+        <a href="{{ url_for('detail', short_url= url.shorten_url)}}" target="_blank">
+    [{{
     url.shorten_url }} detail page]</a>
 
 <br/>
