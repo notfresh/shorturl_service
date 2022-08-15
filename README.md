@@ -34,6 +34,8 @@
 
 比如,下面的公网体验版， 你注册并且登录之后，把 https://www.bilibili.com/ 记为 bb， 在浏览器里输入 https://jumper.pub/bb 就可以直接跳转到 https://www.bilibili.com/。 <br/> 
 
+还有公网模式，如果你选择压缩的网址是公开的，会在前缀前加上 p/, 比如 https://jumper.pub/p/bb 可以直接访问 https://www.bilibili.com/。
+
 其次，别人有的咱也有。本网站也支持把网址压缩成一个不可读的16进制字符串。<br/>  
 
 
