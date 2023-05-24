@@ -57,7 +57,7 @@ class AnonymousUser(AnonymousUserMixin):
 
 login_manager.anonymous_user = AnonymousUser
 
-
+# ///
 class TheForm(Form):
     the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
     customize_url = StringField("you can assgin a short name if you like, input random to generate randomly", validators=[Length(min=2, max=16)])
@@ -118,7 +118,7 @@ def index():
         urls = ShortURL.query.filter_by(created_by=current_user.username).all()
     else:
         urls = []
-    if form.validate_on_submit():
+    if form.validate():
         the_url = form.the_url.data
         customize_url = form.customize_url.data
         is_public = form.is_public.data
@@ -202,12 +202,12 @@ def extract_f1(short_url):
     url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()
     form = UpdateForm(customize_url=clear_public(url.shorten_url), the_url=url.origin_url, is_public=url.is_public)
     form_delete = DeleteForm(customize_url=url.shorten_url, the_url=url.origin_url)
-    if form_delete.validate_on_submit():
+    if form_delete.validate():
         if form_delete.confirm.data == 'yes':
             db.session.delete(url)
             db.session.commit()
             return redirect(url_for('index'))
-    elif form.validate_on_submit():
+    elif form.validate():
         default_shorten_url = 'random'
         the_url = form.the_url.data
         customize_url = clear_public(form.customize_url.data)

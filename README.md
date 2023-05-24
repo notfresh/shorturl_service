@@ -101,7 +101,7 @@ git clone https://github.com/notfresh/shorturl_service shorturl_service
 
 以下是思路流程图，基本上也是我代码实现的思路：
 
-![关联图](https://typora-1256991781.cos.ap-beijing.myqcloud.com/uPic/关联图.jpg)
+![关联图](./images/flow.jpg)
 
 ## 核心代码
 
