@@ -285,8 +285,8 @@ def redirect_short_url(short_url):
     #     redis_client.set(short_url, origin_url, 24*3600)
     # return redirect(origin_url)
 
-@login_required
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
+@login_required
 def redirect_short_url_with_prefix(short_url, short_url_prefix):
     # origin_url = redis_client.get(short_url_prefix + '/' + short_url)
     # if not origin_url:
