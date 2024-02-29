@@ -19,6 +19,7 @@ from config import CONFIGS
 
 import sqlalchemy as sa
 from .models import ShortURL, db, User
+from .plugins import comma_mode
 
 app = Flask(__name__)
 
@@ -276,8 +277,13 @@ def detail(short_url):
 @login_required
 def redirect_short_url(short_url):
     created_by = current_user.username
-    url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()
-    return redirect(url.origin_url)
+    final_url = ""
+    if ":" in short_url:
+        final_url =  comma_mode(short_url)
+    else:
+        url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()  
+        final_url = url.origin_url  
+    return redirect(final_url)
     # origin_url = redis_client.get(short_url)
     # if not origin_url:
     #     url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()

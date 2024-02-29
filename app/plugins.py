@@ -1,6 +1,4 @@
-a = '124{}'
-a= a.format(123)
-print(a)
+#coding=utf-8
 
 mode_mapping = {
     "jj": "https://juejin.cn/search?query=%22{}%22",
@@ -22,10 +20,4 @@ def comma_mode(input_string):
         return formatted
     else:
         print("The string does not contain a colon.")
-        return input_string        
-
-print(comma_mode("jj:xxx"))
-print(comma_mode("jj:spring admin"))
-print(comma_mode("cls:acurate"))
-print(comma_mode("cls:ad hoc"))
-print(comma_mode("gh:iefnaf"))
+        return input_string      

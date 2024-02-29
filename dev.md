@@ -8,11 +8,13 @@ In order to use a virutal enviroment,
 in Ubuntu 20, use:
 ```
 apt install python3.8 python3.8-venv python3-venv
+python -m venv .venv
+
 ```
 
 open virtual enviroment
 ```
-source venv/bin/activate
+source .venv/bin/activate
 
 # then you can install dependencies 
 pip install -r requirements.txt
