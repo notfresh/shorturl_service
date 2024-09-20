@@ -66,7 +66,8 @@ git clone https://github.com/notfresh/shorturl_service shorturl_service
     docker-compose up 
     
     # 启动另外一个终端标签,如果有需要升级初始化数据库
-    # docker-compose run app python manage.py db upgrade  
+    #  针对一个已经定义在 docker-compose.yml 文件中的服务执行一条命令，您可以使用 docker-compose run 命令
+    docker-compose run app python manage.py db upgrade  
     ```
 
 2. 在浏览器访问 `http://locahost/` 即可体验
