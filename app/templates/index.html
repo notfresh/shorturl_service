@@ -11,7 +11,12 @@
 <p>the shorten url has been taken by {{ took_url }}, try to visit <a href="{{shorten_url}}">{{shorten_url}}</a>?</p>
     {% endif %}
 
-<h1>Existing shortened urls </h1>
+<style>
+.smaller-font {
+    font-size: 14px; /* 你可以根据需要调整这个大小 */
+}
+</style>    
+<h1>Existing shortened urls <span class="smaller-font"><a href="{{ url_for('download_shortened') }}">Download shortended</a></span> </h1>
     {% for url in urls %}
 shortened is <a href="{{url.origin_url}}" target="_blank">{{ url.shorten_url }}</a>, origin {{ url.origin_url }}, you can edit it at
         <a href="{{ url_for('detail', short_url= url.shorten_url)}}" target="_blank">

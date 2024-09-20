@@ -110,6 +110,43 @@ def clear_public(shorten_url):
         return shorten_url[2:]
     return shorten_url
 
+from flask import  send_file
+import pandas as pd
+from io import BytesIO
+@app.route('/download_shortened')
+def download_shortened():
+    urls = ShortURL.query.filter_by(created_by=current_user.username).all()
+    # 创建一个简单的DataFrame
+    shortened_urls = []
+    origin_urls = []
+    is_public_flag = []
+    for url in urls:
+        shortened_urls.append(url.shorten_url)
+        origin_urls.append(url.origin_url)
+        is_public_flag.append(url.is_public)
+    df = pd.DataFrame({
+        'shortened_urls': shortened_urls,
+        'origin_urls': origin_urls,
+        'is_public': is_public_flag
+    })
+    # 使用BytesIO作为临时存储
+    buffer = BytesIO()
+    # 将DataFrame保存为Excel文件
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Sheet1')
+
+    # 重置缓冲区的位置
+    buffer.seek(0)
+
+    # 发送文件给用户
+    return send_file(
+        buffer,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        attachment_filename='shortended.xlsx'
+    )
+
+
 @app.route('/', methods=['POST', 'GET'])
 @login_required
 def index():
