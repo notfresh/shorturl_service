@@ -34,6 +34,17 @@ shorten_items = []
 shorten_items_mapping = {}
 shorten_items_init_flag = False
 
+def init_shorten_urls(urls):
+    if urls == None:
+        urls = ShortURL.query.all()
+    global shorten_items_init_flag
+    if shorten_items_init_flag == False:
+        shorten_items_init_flag = True
+        for url in urls:
+            shorten_items.append(url.shorten_url)
+            shorten_items_mapping[url.shorten_url] = url
+        print("@Log __init__.py 46 init_shorten_urls the shortened items len is ", len(shorten_items))
+
 def create_app(flask_config='development', **kwargs):
     config_name = os.getenv('FLASK_ENV', flask_config)
     app.config.from_object(CONFIGS[config_name])
@@ -50,7 +61,8 @@ def create_app(flask_config='development', **kwargs):
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
-
+    with app.app_context():
+        init_shorten_urls(None)
     return app
 
 @login_manager.user_loader
@@ -151,6 +163,8 @@ def download_shortened():
     )
 
 
+
+
 @app.route('/', methods=['POST', 'GET'])
 @login_required
 def index():
@@ -158,13 +172,6 @@ def index():
     form = TheForm(customize_url=default_shorten_url)
     if current_user.is_authenticated:
         urls = ShortURL.query.filter_by(created_by=current_user.username).all()
-        global shorten_items_init_flag
-        if shorten_items_init_flag == False:
-            shorten_items_init_flag = True
-            for url in urls:
-                shorten_items.append(url.shorten_url)
-                shorten_items_mapping[url.shorten_url] = url
-            print("@Log __init__.py L156 index the shortened items len is ", len(shorten_items))
     else:
         urls = []
     if form.validate():
@@ -339,11 +346,12 @@ def find_similar_words(word, word_list, n=5, cutoff=0.6):
 
 def find_similar_urls(shorten_item):
     similar_words = find_similar_words(shorten_item, shorten_items)
+    print("@Log __init__.py find_similar_urls LIne342 find_similar_urls ", similar_words)
     similar_urls = []
     for word in similar_words:
         url = shorten_items_mapping[word]  # TODO
         similar_urls.append(url)
-    return []
+    return similar_urls
 
 @app.route('/p/<string:short_url>', methods=['GET'])
 def redirect_public_short_url(short_url):
@@ -354,7 +362,7 @@ def redirect_public_short_url(short_url):
     else:
         similar_urls = find_similar_urls(short_url)
         print("@Log __init__.py L355 redirect_public_short_url similar urls is ", similar_urls)
-        return render_template('404_and_similar.html', similar_urs=similar_urls)
+        return render_template('404_and_similar.html', similar_urls=similar_urls)
 
 @app.route('/<string:short_url>', methods=['GET'])
 @login_required
@@ -372,7 +380,7 @@ def redirect_short_url(short_url):
         else:
             similar_urls = find_similar_urls(short_url)
             print("@Log __init__.py L373 redirect_short_url similar urls is ", similar_urls)
-            return render_template('404_and_similar.html', similar_urs=similar_urls)
+            return render_template('404_and_similar.html', similar_urls=similar_urls)
 
     # origin_url = redis_client.get(short_url)
     # if not origin_url:
@@ -396,7 +404,7 @@ def redirect_p_short_url_with_prefix(short_url, short_url_prefix):
     else:
         similar_urls = find_similar_urls(shorten_item)
         print("@Log __init__.py L397 redirect_p_short_url_with_prefix similar urls is ", similar_urls)
-        return render_template('404_and_similar.html',similar_urs=similar_urls)
+        return render_template('404_and_similar.html',similar_urls=similar_urls)
 
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
 @login_required
@@ -413,7 +421,7 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
     else:
         similar_urls = find_similar_urls(shorten_item)
         print("@Log __init__.py L414 redirect_short_url_with_prefix similar urls is ", similar_urls)
-        return render_template('404_and_similar.html', similar_urs=similar_urls)
+        return render_template('404_and_similar.html', similar_urls=similar_urls)
 
 @app.route('/about')
 def about():
