@@ -316,31 +316,6 @@ def extract_f1(short_url):
 def detail(short_url):
     return extract_f1(short_url)
 
-@app.route('/p/<string:short_url>', methods=['GET'])
-def redirect_public_short_url(short_url):
-    short_url = "p/" + short_url
-    url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
-    return redirect(url.origin_url)
-
-@app.route('/<string:short_url>', methods=['GET'])
-@login_required
-def redirect_short_url(short_url):
-    created_by = current_user.username
-    final_url = ""
-    if ":" in short_url:
-        final_url =  comma_mode(short_url)
-    else:
-        url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()  
-        final_url = url.origin_url  
-    return redirect(final_url)
-    # origin_url = redis_client.get(short_url)
-    # if not origin_url:
-    #     url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
-    #     origin_url = url.origin_url
-    #     redis_client.set(short_url, origin_url, 24*3600)
-    # return redirect(origin_url)
-
-
 def find_similar_words(word, word_list, n=5, cutoff=0.6):
     """
     根据给定的单词，在列表中找到相似的单词。
@@ -361,7 +336,6 @@ def find_similar_words(word, word_list, n=5, cutoff=0.6):
     words = list(set(words))
     return words
 
-
 def find_similar_urls(shorten_item):
     similar_words = find_similar_words(shorten_item, shorten_items)
     similar_urls = []
@@ -369,6 +343,40 @@ def find_similar_urls(shorten_item):
         url = shorten_items_mapping[word]  # TODO
         similar_urls.append(url)
     return []
+
+@app.route('/p/<string:short_url>', methods=['GET'])
+def redirect_public_short_url(short_url):
+    short_url = "p/" + short_url
+    url = ShortURL.query.filter_by(shorten_url=short_url).first()
+    if url:
+        return redirect(url.origin_url)
+    else:
+        similar_urls = find_similar_urls(short_url)
+        return render_template('404_and_similar.html', similar_urs=similar_urls)
+
+@app.route('/<string:short_url>', methods=['GET'])
+@login_required
+def redirect_short_url(short_url):
+    created_by = current_user.username
+    final_url = ""
+    if ":" in short_url:
+        final_url =  comma_mode(short_url)
+        return redirect(final_url)
+    else:
+        url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first()
+        if url:
+            final_url = url.origin_url
+            return redirect(final_url)
+        else:
+            similar_urls = find_similar_urls(short_url)
+            return render_template('404_and_similar.html', similar_urs=similar_urls)
+
+    # origin_url = redis_client.get(short_url)
+    # if not origin_url:
+    #     url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
+    #     origin_url = url.origin_url
+    #     redis_client.set(short_url, origin_url, 24*3600)
+    # return redirect(origin_url)
 
 @app.route('/p/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
 @login_required
@@ -392,11 +400,15 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
     # origin_url = redis_client.get(short_url_prefix + '/' + short_url)
     # if not origin_url:
     created_by = current_user.username
-    url = ShortURL.query.filter_by(shorten_url=short_url_prefix + '/' + short_url, created_by=created_by).first_or_404()
-    origin_url = url.origin_url
-    # redis_client.set(short_url_prefix + '/' + short_url, origin_url, 24*3600)
-    return redirect(origin_url)
-
+    shorten_item = short_url_prefix + '/' + short_url
+    url = ShortURL.query.filter_by(shorten_item, created_by=created_by).first()
+    if url:
+        origin_url = url.origin_url
+        # redis_client.set(short_url_prefix + '/' + short_url, origin_url, 24*3600)
+        return redirect(origin_url)
+    else:
+        similar_urls = find_similar_urls(shorten_item)
+        return render_template('404_and_similar.html', similar_urs=similar_urls)
 
 @app.route('/about')
 def about():
