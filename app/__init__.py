@@ -164,6 +164,7 @@ def index():
             for url in urls:
                 shorten_items.append(url.shorten_url)
                 shorten_items_mapping[url.shorten_url] = url
+            print("@Log __init__.py L156 index the shortened items len is ", len(shorten_items))
     else:
         urls = []
     if form.validate():
@@ -352,6 +353,7 @@ def redirect_public_short_url(short_url):
         return redirect(url.origin_url)
     else:
         similar_urls = find_similar_urls(short_url)
+        print("@Log __init__.py L355 redirect_public_short_url similar urls is ", similar_urls)
         return render_template('404_and_similar.html', similar_urs=similar_urls)
 
 @app.route('/<string:short_url>', methods=['GET'])
@@ -369,6 +371,7 @@ def redirect_short_url(short_url):
             return redirect(final_url)
         else:
             similar_urls = find_similar_urls(short_url)
+            print("@Log __init__.py L373 redirect_short_url similar urls is ", similar_urls)
             return render_template('404_and_similar.html', similar_urs=similar_urls)
 
     # origin_url = redis_client.get(short_url)
@@ -392,6 +395,7 @@ def redirect_p_short_url_with_prefix(short_url, short_url_prefix):
         return redirect(origin_url)
     else:
         similar_urls = find_similar_urls(shorten_item)
+        print("@Log __init__.py L397 redirect_p_short_url_with_prefix similar urls is ", similar_urls)
         return render_template('404_and_similar.html',similar_urs=similar_urls)
 
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
@@ -408,6 +412,7 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
         return redirect(origin_url)
     else:
         similar_urls = find_similar_urls(shorten_item)
+        print("@Log __init__.py L414 redirect_short_url_with_prefix similar urls is ", similar_urls)
         return render_template('404_and_similar.html', similar_urs=similar_urls)
 
 @app.route('/about')
