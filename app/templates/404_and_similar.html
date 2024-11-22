@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block page_content %}
+
+<h1>404</h1>
+<p>You are missing, just return to <a href="/">home page</a></p>
+
+<h2>The existing similar urls </h2>
+    {% for url in similar_urls %}
+shortened is <a href="{{url.origin_url}}" target="_blank">{{ url.shorten_url }}</a>, origin {{ url.origin_url }}, you can edit it at
+        <a href="{{ url_for('detail', short_url= url.shorten_url)}}" target="_blank">
+    [{{
+    url.shorten_url }} detail page]</a>
+
+<br/>
+    {% endfor %}
+{% endblock %}
+

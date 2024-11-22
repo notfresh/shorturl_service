@@ -30,6 +30,10 @@ login_manager = LoginManager()
 login_manager.session_protection = 'strong'
 login_manager.login_view = 'auth.login'
 
+shorten_items = []
+shorten_items_mapping = {}
+shorten_items_init_flag = False
+
 def create_app(flask_config='development', **kwargs):
     config_name = os.getenv('FLASK_ENV', flask_config)
     app.config.from_object(CONFIGS[config_name])
@@ -117,6 +121,12 @@ def index():
     form = TheForm(customize_url=default_shorten_url)
     if current_user.is_authenticated:
         urls = ShortURL.query.filter_by(created_by=current_user.username).all()
+        global shorten_items_init_flag
+        if shorten_items_init_flag == False:
+            shorten_items_init_flag = True
+            for url in urls:
+                shorten_items.append(url.shorten_url)
+                shorten_items_mapping[url.shorten_url] = url
     else:
         urls = []
     if form.validate():
@@ -136,9 +146,13 @@ def index():
                 # shorten_url 有可能是唯一的，会引起唯一性索引异常
                 db.session.add(url)
                 db.session.commit()
+                shorten_items.append(url.shorten_url)
+                shorten_items_mapping[url.shorten_url] = url
                 break
             except sa.exc.IntegrityError as e:
                 db.session.rollback()
+                shorten_items.remove(url.shorten_url)
+                shorten_items_mapping.pop(url.shorten_url)
                 saved_origin_url = db.session.query(ShortURL.origin_url).filter_by(shorten_url=shorten_url, created_by=created_by).first()
                 # print(shorten_url + " exists, roll back")
                 # 自定义短网址命名重复
@@ -183,13 +197,6 @@ def make_full_url(app, shorten_url, is_public='False'):
     else:
         full_shorten_url = '{http}://{domain_name}:{port}/{short_url}'.format(http=HTTP, domain_name=DOMAIN_NAME, port=PORT, short_url=shorten_url)
     return full_shorten_url
-
-
-@app.route('/p/<string:short_url>', methods=['GET'])
-def redirect_public_short_url(short_url):
-    short_url = "p/" + short_url
-    url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
-    return redirect(url.origin_url)
 
 
 @app.route('/detail/<string:prefix>/<string:short_url>', methods=['GET','POST'])
@@ -272,6 +279,11 @@ def extract_f1(short_url):
 def detail(short_url):
     return extract_f1(short_url)
 
+@app.route('/p/<string:short_url>', methods=['GET'])
+def redirect_public_short_url(short_url):
+    short_url = "p/" + short_url
+    url = ShortURL.query.filter_by(shorten_url=short_url).first_or_404()
+    return redirect(url.origin_url)
 
 @app.route('/<string:short_url>', methods=['GET'])
 @login_required
@@ -290,6 +302,52 @@ def redirect_short_url(short_url):
     #     origin_url = url.origin_url
     #     redis_client.set(short_url, origin_url, 24*3600)
     # return redirect(origin_url)
+
+
+def find_similar_words(word, word_list, n=5, cutoff=0.6):
+    """
+    根据给定的单词，在列表中找到相似的单词。
+
+    参数:
+        word (str): 要查找的单词
+        word_list (list of str): 参考单词列表
+        n (int): 返回的相似单词数量，默认为5
+        cutoff (float): 相似度阈值，介于0到1之间，默认为0.6
+
+    返回:
+        list of str: 相似的单词列表
+    """
+    import difflib
+    words = difflib.get_close_matches(word, word_list, n=n, cutoff=cutoff)
+    words_contains_word = [w for w in word_list if word in w]
+    words.extend(words_contains_word)
+    words = list(set(words))
+    return words
+
+
+def find_similar_urls(shorten_item):
+    similar_words = find_similar_words(shorten_item, shorten_items)
+    similar_urls = []
+    for word in similar_words:
+        url = shorten_items_mapping[word]  # TODO
+        similar_urls.append(url)
+    return []
+
+@app.route('/p/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
+@login_required
+def redirect_p_short_url_with_prefix(short_url, short_url_prefix):
+    # origin_url = redis_client.get(short_url_prefix + '/' + short_url)
+    # if not origin_url:
+    created_by = current_user.username
+    shorten_item = 'p/' + short_url_prefix + '/' + short_url
+    url = ShortURL.query.filter_by(shorten_url=shorten_item, created_by=created_by).first()
+    if url:
+        origin_url = url.origin_url
+        # redis_client.set(short_url_prefix + '/' + short_url, origin_url, 24*3600)
+        return redirect(origin_url)
+    else:
+        similar_urls = find_similar_urls(shorten_item)
+        return render_template('404_and_similar.html',similar_urs=similar_urls)
 
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
 @login_required
