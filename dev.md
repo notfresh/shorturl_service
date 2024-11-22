@@ -39,3 +39,10 @@ python manage.py db migrate
 ```
 to records these changes.  
 
+
+# debug
+```
+python manage.py runserver -h 0.0.0.0 
+```
+
+
