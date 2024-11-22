@@ -49,3 +49,6 @@ test_socketio/
 app.sqlite
 
 env/env.yml
+
+# log related
+nohup.out
