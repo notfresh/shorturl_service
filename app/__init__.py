@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+# coding=utf-8
 import os
 import random
 
@@ -44,6 +44,7 @@ def init_shorten_urls(urls):
             shorten_items.append(url.shorten_url)
             shorten_items_mapping[url.shorten_url] = url
         print("@Log __init__.py 46 init_shorten_urls the shortened items len is ", len(shorten_items))
+        print("@Log __init__.py 47 init_shorten_urls the shortened shorten_items_mapping len is ", len(shorten_items_mapping))
 
 def clean_shorten_urls(url_object):
     try:
@@ -53,9 +54,12 @@ def clean_shorten_urls(url_object):
         pass
 
 def add_shorten_Urls(url_object):
-    if url_object.shorten_url not in shorten_items:
-        shorten_items.add(url_object.shorten_url)
-        shorten_items_mapping[url_object.shorten_url] = url_object
+    try:
+        if url_object.shorten_url not in shorten_items:
+            shorten_items.append(url_object.shorten_url)
+            shorten_items_mapping[url_object.shorten_url] = url_object
+    except Exception as e:
+        print("@Log Error __Init__ Line66 add_shorten_Urls ", e, type(e).__name__)
 
 def create_app(flask_config='development', **kwargs):
     config_name = os.getenv('FLASK_ENV', flask_config)
@@ -129,8 +133,7 @@ def make_public(shorten_url, is_public):
         return shorten_url
     if is_public == True:  # 一定要和True比较,否则会认为判断这个变量是否存在
         shorten_url = 'p/' + shorten_url
-        print("################## public")
-    print("################## public ??", is_public, shorten_url)
+    print("@Log __init__.py line132 make_public  public ??", is_public, shorten_url)
     return shorten_url
 
 def clear_public(shorten_url):
@@ -196,6 +199,7 @@ def index():
                 shorten_url = rehash_baseh62(the_url)  #压缩算法或者自定义短网址，本系统的核心
             else:
                 shorten_url = make_public(customize_url, form.is_public.data == 'True')
+            print("@Log __init__ index Line198 create url")
             url = ShortURL(origin_url=the_url, shorten_url=shorten_url,created_by=created_by, is_public=is_public, shorten_url_created_by=shorten_url+"-"+str(created_by))
             # 保存
             try:
@@ -203,7 +207,9 @@ def index():
                 # shorten_url 有可能是唯一的，会引起唯一性索引异常
                 db.session.add(url)
                 db.session.commit() 
+                print("@Log __init__ index Line206 commit")
                 add_shorten_Urls(url)
+                print("@Log __init__ index Line208 commit")
                 break
             except sa.exc.IntegrityError as e:
                 db.session.rollback()
@@ -234,6 +240,7 @@ def index():
                             the_url += ('?randomk=' + str(random.random()))
                 else:
                     from flask import abort
+                    print("@Log __init__ index Line239 abort")
                     return abort(404, "Error Unxpected")
             except Exception as e:
                 return render_template('500.html'), 500
