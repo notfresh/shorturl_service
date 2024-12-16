@@ -2,7 +2,9 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% block page_content %}
     <h1>Shorten the url </h1>
-    {{ wtf.quick_form(form,  form_type="basic") }}
+    {% from 'macros.html' import custom_form %}
+        {{ custom_form(form) }}
+    <!-- {{ wtf.quick_form(form,  form_type="basic") }} -->
 
     {% if shorten_url and not taken %}
 <p>the shorten url is: <b>{{ shorten_url }}</b>, try to visit <a href="{{shorten_url}}">{{shorten_url}}</a>?</p>

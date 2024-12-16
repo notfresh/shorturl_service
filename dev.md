@@ -39,3 +39,55 @@ python manage.py db migrate
 ```
 to records these changes.  
 
+
+# debug
+```
+python manage.py runserver -h 0.0.0.0 
+```
+# rebuild the images and re-deploy
+
+
+## Method 1: Use the `--build` Option
+
+When you run the `docker-compose up` command, you can add the `--build` option to force the rebuilding of the service's image.
+
+```sh
+docker-compose up --build
+```
+
+## Method 2: Use the `docker-compose build` Command
+
+You can also use the `docker-compose build` command to rebuild the images before starting the services.
+
+```sh
+docker-compose build
+docker-compose up
+```
+
+## Method 3: Use the `--force-recreate` Option
+
+If you want to not only rebuild the images but also force the recreation of containers when starting the services, you can use the `--force-recreate` option.
+
+```sh
+docker-compose up --build --force-recreate
+```
+
+### Method 4: Remove Old Images and Containers
+
+If you want to completely remove old images and containers and then rebuild and start the services, follow these steps:
+
+1. **Stop and remove all containers**:
+   ```sh
+   docker-compose down
+   ```
+
+2. **Remove old images**:
+   ```sh
+   docker image prune -f
+   docker rmi $(docker images -q)
+   ```
+
+3. **Rebuild and start the services**:
+   ```sh
+   docker-compose up --build
+   ```

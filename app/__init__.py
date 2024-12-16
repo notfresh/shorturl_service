@@ -1,4 +1,4 @@
-# -*- coding:utf-8 -*-
+# coding=utf-8
 import os
 import random
 
@@ -34,6 +34,33 @@ shorten_items = []
 shorten_items_mapping = {}
 shorten_items_init_flag = False
 
+def init_shorten_urls(urls):
+    if urls == None:
+        urls = ShortURL.query.all()
+    global shorten_items_init_flag
+    if shorten_items_init_flag == False:
+        shorten_items_init_flag = True
+        for url in urls:
+            shorten_items.append(url.shorten_url)
+            shorten_items_mapping[url.shorten_url] = url
+        print("@Log __init__.py 46 init_shorten_urls the shortened items len is ", len(shorten_items))
+        print("@Log __init__.py 47 init_shorten_urls the shortened shorten_items_mapping len is ", len(shorten_items_mapping))
+
+def clean_shorten_urls(url_object):
+    try:
+        shorten_items.remove(url_object.shorten_url)
+        shorten_items_mapping.pop(url_object.shorten_url)
+    except:
+        pass
+
+def add_shorten_Urls(url_object):
+    try:
+        if url_object.shorten_url not in shorten_items:
+            shorten_items.append(url_object.shorten_url)
+            shorten_items_mapping[url_object.shorten_url] = url_object
+    except Exception as e:
+        print("@Log Error __Init__ Line66 add_shorten_Urls ", e, type(e).__name__)
+
 def create_app(flask_config='development', **kwargs):
     config_name = os.getenv('FLASK_ENV', flask_config)
     app.config.from_object(CONFIGS[config_name])
@@ -50,7 +77,8 @@ def create_app(flask_config='development', **kwargs):
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
-
+    with app.app_context():
+        init_shorten_urls(None)
     return app
 
 @login_manager.user_loader
@@ -70,7 +98,7 @@ class TheForm(Form):
     submit = SubmitField("shorten")
 
 class UpdateForm(Form):
-    the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()])
+    the_url = StringField("the origin url to be shorten", validators=[DataRequired(), URL()]) # TODO 这个名字叫的不好，需要改。
     customize_url = StringField("you can assgin a short name if you like, input random to generate randomly", validators=[Length(min=2, max=16)])
     is_public = RadioField('whether you want to make the shorten url public', choices=[('True', 'Yes'), ('False', 'No')], default='False')
     submit = SubmitField("Update")
@@ -105,8 +133,7 @@ def make_public(shorten_url, is_public):
         return shorten_url
     if is_public == True:  # 一定要和True比较,否则会认为判断这个变量是否存在
         shorten_url = 'p/' + shorten_url
-        print("################## public")
-    print("################## public ??", is_public, shorten_url)
+    print("@Log __init__.py line132 make_public  public ??", is_public, shorten_url)
     return shorten_url
 
 def clear_public(shorten_url):
@@ -151,6 +178,8 @@ def download_shortened():
     )
 
 
+
+
 @app.route('/', methods=['POST', 'GET'])
 @login_required
 def index():
@@ -158,13 +187,6 @@ def index():
     form = TheForm(customize_url=default_shorten_url)
     if current_user.is_authenticated:
         urls = ShortURL.query.filter_by(created_by=current_user.username).all()
-        global shorten_items_init_flag
-        if shorten_items_init_flag == False:
-            shorten_items_init_flag = True
-            for url in urls:
-                shorten_items.append(url.shorten_url)
-                shorten_items_mapping[url.shorten_url] = url
-            print("@Log __init__.py L156 index the shortened items len is ", len(shorten_items))
     else:
         urls = []
     if form.validate():
@@ -177,24 +199,25 @@ def index():
                 shorten_url = rehash_baseh62(the_url)  #压缩算法或者自定义短网址，本系统的核心
             else:
                 shorten_url = make_public(customize_url, form.is_public.data == 'True')
+            print("@Log __init__ index Line198 create url")
             url = ShortURL(origin_url=the_url, shorten_url=shorten_url,created_by=created_by, is_public=is_public, shorten_url_created_by=shorten_url+"-"+str(created_by))
             # 保存
             try:
                 # 试探着保存, 如果保存成功, 那么跳出循环
                 # shorten_url 有可能是唯一的，会引起唯一性索引异常
                 db.session.add(url)
-                db.session.commit()
-                shorten_items.append(url.shorten_url)
-                shorten_items_mapping[url.shorten_url] = url
+                db.session.commit() 
+                print("@Log __init__ index Line206 commit")
+                add_shorten_Urls(url)
+                print("@Log __init__ index Line208 commit")
                 break
             except sa.exc.IntegrityError as e:
                 db.session.rollback()
-                shorten_items.remove(url.shorten_url)
-                shorten_items_mapping.pop(url.shorten_url)
+                clean_shorten_urls(url)
                 saved_origin_url = db.session.query(ShortURL.origin_url).filter_by(shorten_url=shorten_url, created_by=created_by).first()
                 # print(shorten_url + " exists, roll back")
                 # 自定义短网址命名重复
-                if customize_url != default_shorten_url:
+                if customize_url != default_shorten_url and saved_origin_url:
                     flash('the assgined name has been taken before')
                     took_url = saved_origin_url[0] # 第一个字段
                     return render_template('index.html', form=form,
@@ -202,7 +225,7 @@ def index():
                                            taken=True,
                                            took_url=took_url)
                 # 没有采用自定义网址, 默认采用压缩的方式, 但是之前已经存储过 或者 压缩的时候哈希冲突
-                if customize_url == default_shorten_url:
+                elif customize_url == default_shorten_url:
                     # 之前已经存储过, 不做处理
                     if saved_origin_url == the_url:
                         break
@@ -215,6 +238,10 @@ def index():
                             if the_url[-1] != '/':  # 没有以/结尾
                                 the_url += '/'
                             the_url += ('?randomk=' + str(random.random()))
+                else:
+                    from flask import abort
+                    print("@Log __init__ index Line239 abort")
+                    return abort(404, "Error Unxpected")
             except Exception as e:
                 return render_template('500.html'), 500
         return render_template('index.html', form=form, shorten_url=make_full_url(app, shorten_url, is_public), urls=urls)
@@ -223,7 +250,6 @@ def index():
 # @app.route("/delete", methods="POST")
 # def delete_short_url(shorten_url):
 #     pass
-
 
 def make_full_url(app, shorten_url, is_public='False'):
     DOMAIN_NAME = app.config['DOMAIN_NAME']
@@ -237,25 +263,35 @@ def make_full_url(app, shorten_url, is_public='False'):
     return full_shorten_url
 
 
+@app.route('/detail/p/<string:prefix>/<string:short_url>', methods=['GET','POST'])
+@login_required
+def detail2LevelWithP(prefix, short_url):
+    print("Hello, I got it!")
+    return extract_f1("p/" + prefix+"/"+ short_url)
+
 @app.route('/detail/<string:prefix>/<string:short_url>', methods=['GET','POST'])
 @login_required
 def detail2Level(prefix, short_url):
     print("Hello, I got it!")
     return extract_f1(prefix+"/"+ short_url)
 
-def extract_f1(short_url):
+import copy
+
+def extract_f1(short_url): # TODO 这个函数的名字实在是胡闹！
     created_by = current_user.username
     url = ShortURL.query.filter_by(shorten_url=short_url, created_by=created_by).first_or_404()
+    old_url = copy.deepcopy(url)
     form = UpdateForm(customize_url=clear_public(url.shorten_url), the_url=url.origin_url, is_public=url.is_public)
     form_delete = DeleteForm(customize_url=url.shorten_url, the_url=url.origin_url)
     if form_delete.validate():
         if form_delete.confirm.data == 'yes':
             db.session.delete(url)
             db.session.commit()
+            clean_shorten_urls(url)
             return redirect(url_for('index'))
-    elif form.validate():
+    elif form.validate(): # 更新
         default_shorten_url = 'random'
-        the_url = form.the_url.data
+        the_url = form.the_url.data # @mark
         customize_url = clear_public(form.customize_url.data)
         is_public = form.is_public.data
         created_by = current_user.username
@@ -277,10 +313,14 @@ def extract_f1(short_url):
                 # shorten_url 有可能是唯一的，会引起唯一性索引异常
                 db.session.add(url)
                 db.session.commit()
+                clean_shorten_urls(old_url)
+                add_shorten_Urls(url)
                 break
             except sa.exc.IntegrityError as e:
                 print(e)
                 db.session.rollback()
+                clean_shorten_urls(url)
+                add_shorten_Urls(old_url)
                 saved_origin_url = db.session.query(ShortURL.origin_url).filter_by(shorten_url=customize_url, created_by=created_by).first()
                 # print(shorten_url + " exists, roll back")
                 # 自定义短网址命名重复
@@ -339,11 +379,12 @@ def find_similar_words(word, word_list, n=5, cutoff=0.6):
 
 def find_similar_urls(shorten_item):
     similar_words = find_similar_words(shorten_item, shorten_items)
+    print("@Log __init__.py find_similar_urls LIne342 find_similar_urls ", similar_words)
     similar_urls = []
     for word in similar_words:
         url = shorten_items_mapping[word]  # TODO
         similar_urls.append(url)
-    return []
+    return similar_urls
 
 @app.route('/p/<string:short_url>', methods=['GET'])
 def redirect_public_short_url(short_url):
@@ -354,7 +395,7 @@ def redirect_public_short_url(short_url):
     else:
         similar_urls = find_similar_urls(short_url)
         print("@Log __init__.py L355 redirect_public_short_url similar urls is ", similar_urls)
-        return render_template('404_and_similar.html', similar_urs=similar_urls)
+        return render_template('404_and_similar.html', similar_urls=similar_urls)
 
 @app.route('/<string:short_url>', methods=['GET'])
 @login_required
@@ -372,7 +413,7 @@ def redirect_short_url(short_url):
         else:
             similar_urls = find_similar_urls(short_url)
             print("@Log __init__.py L373 redirect_short_url similar urls is ", similar_urls)
-            return render_template('404_and_similar.html', similar_urs=similar_urls)
+            return render_template('404_and_similar.html', similar_urls=similar_urls)
 
     # origin_url = redis_client.get(short_url)
     # if not origin_url:
@@ -396,7 +437,7 @@ def redirect_p_short_url_with_prefix(short_url, short_url_prefix):
     else:
         similar_urls = find_similar_urls(shorten_item)
         print("@Log __init__.py L397 redirect_p_short_url_with_prefix similar urls is ", similar_urls)
-        return render_template('404_and_similar.html',similar_urs=similar_urls)
+        return render_template('404_and_similar.html',similar_urls=similar_urls)
 
 @app.route('/<string:short_url_prefix>/<string:short_url>', methods=['GET'])
 @login_required
@@ -405,7 +446,7 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
     # if not origin_url:
     created_by = current_user.username
     shorten_item = short_url_prefix + '/' + short_url
-    url = ShortURL.query.filter_by(shorten_item, created_by=created_by).first()
+    url = ShortURL.query.filter_by(shorten_url=shorten_item, created_by=created_by).first()
     if url:
         origin_url = url.origin_url
         # redis_client.set(short_url_prefix + '/' + short_url, origin_url, 24*3600)
@@ -413,7 +454,7 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
     else:
         similar_urls = find_similar_urls(shorten_item)
         print("@Log __init__.py L414 redirect_short_url_with_prefix similar urls is ", similar_urls)
-        return render_template('404_and_similar.html', similar_urs=similar_urls)
+        return render_template('404_and_similar.html', similar_urls=similar_urls)
 
 @app.route('/about')
 def about():
