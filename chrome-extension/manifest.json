@@ -1,0 +1,42 @@
+{
+    "manifest_version": 3,
+    "name": "Jumper.pub",
+    "version": "1.0",
+    "description": "一个Jumper.pub的快捷跳转工具.",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "commands",
+        "tabs"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+      }
+    },
+    "commands": {
+      "toggle-feature": {
+        "suggested_key": {
+          "default": "Shift+Alt+G"
+        },
+        "description": "显示Hello World弹窗"
+      },
+      "open-jumper": {
+        "suggested_key": {
+          "default": "Shift+Alt+D"
+        },
+        "description": "打开Jumper输入框"
+      }
+    },
+    "icons": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
