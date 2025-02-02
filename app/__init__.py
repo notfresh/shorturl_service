@@ -35,16 +35,21 @@ shorten_items_mapping = {}
 shorten_items_init_flag = False
 
 def init_shorten_urls(urls):
-    if urls == None:
-        urls = ShortURL.query.all()
-    global shorten_items_init_flag
-    if shorten_items_init_flag == False:
-        shorten_items_init_flag = True
-        for url in urls:
-            shorten_items.append(url.shorten_url)
-            shorten_items_mapping[url.shorten_url] = url
-        print("@Log __init__.py 46 init_shorten_urls the shortened items len is ", len(shorten_items))
-        print("@Log __init__.py 47 init_shorten_urls the shortened shorten_items_mapping len is ", len(shorten_items_mapping))
+    try:
+        if urls == None:
+            urls = ShortURL.query.all()
+        global shorten_items_init_flag
+        if shorten_items_init_flag == False:
+            shorten_items_init_flag = True
+            for url in urls:
+                shorten_items.append(url.shorten_url)
+                shorten_items_mapping[url.shorten_url] = url
+            print("@Log __init__.py 46 init_shorten_urls the shortened items len is ", len(shorten_items))
+            print("@Log __init__.py 47 init_shorten_urls the shortened shorten_items_mapping len is ", len(shorten_items_mapping))
+    except Exception as e:
+        # 如果表不存在，静默失败
+        print(f"Warning: Could not initialize shorten_urls: {e}")
+        return
 
 def clean_shorten_urls(url_object):
     try:
