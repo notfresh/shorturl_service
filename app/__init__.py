@@ -1,6 +1,9 @@
 # coding=utf-8
 import os
 import random
+from datetime import datetime, timedelta
+import json
+from flask import jsonify
 
 from flask import Flask, render_template, flash, url_for
 from flask_login import LoginManager, login_required
@@ -464,6 +467,62 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+from feedgen.feed import FeedGenerator
+from flask import make_response
+
+@app.route('/notfresh/rss/<string:category>')
+def get_rss_feed(category):
+    fg = FeedGenerator()
+    fg.title(f'NotFresh {category} RSS Feed')
+    fg.description(f'最新的{category}相关技术资讯')
+    fg.link(href=f'http://notfresh.com/notfresh/rss/{category}')
+    fg.language('zh-CN')
+    
+    current_time = datetime.now()
+    
+    # RSS条目数据
+    entries = [
+        {
+            "title": f"{category} - GitHub Copilot 新功能发布",
+            "description": "GitHub Copilot推出了新的代码补全和AI辅助功能，提升开发效率...",
+            "published_at": current_time - timedelta(hours=2),
+            "url": "https://github.blog/2024-01-30-github-copilot-chat-beta-now-available-for-individuals/",
+            "author": "GitHub Team"
+        },
+        {
+            "title": f"{category} - Stack Overflow 2023年度调查报告",
+            "description": "Stack Overflow发布2023年度开发者调查报告，揭示最新技术趋势...",
+            "published_at": current_time - timedelta(hours=5),
+            "url": "https://survey.stackoverflow.co/2023/",
+            "author": "Stack Overflow"
+        },
+        {
+            "title": f"{category} - Python 3.12新特性解析",
+            "description": "Python 3.12版本发布，带来性能提升和新语言特性...",
+            "published_at": current_time - timedelta(hours=8),
+            "url": "https://docs.python.org/3.12/whatsnew/3.12.html",
+            "author": "Python Core Team"
+        }
+    ]
+    
+    for entry in entries:
+        fe = fg.add_entry()
+        fe.title(entry["title"])
+        fe.description(entry["description"])
+        fe.link(href=entry["url"])
+        fe.author(name=entry["author"])
+        fe.published(entry["published_at"])
+        fe.id(entry["url"])
+    
+    # 生成RSS feed
+    rssfeed = fg.rss_str(pretty=True)
+    
+    # 创建响应
+    response = make_response(rssfeed)
+    response.headers.set('Content-Type', 'application/rss+xml')
+    
+    return response
 
 
 
