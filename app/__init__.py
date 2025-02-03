@@ -516,12 +516,12 @@ def get_rss_feed(category):
         fe.published(entry["published_at"])
         fe.id(entry["url"])
     
-    # 生成RSS feed
-    rssfeed = fg.rss_str(pretty=True)
+    # 生成RSS feed并指定编码
+    rssfeed = fg.rss_str(pretty=True, encoding='UTF-8')
     
-    # 创建响应
+    # 创建响应并设置正确的Content-Type和编码
     response = make_response(rssfeed)
-    response.headers.set('Content-Type', 'application/rss+xml')
+    response.headers.set('Content-Type', 'application/rss+xml; charset=UTF-8')
     
     return response
 
