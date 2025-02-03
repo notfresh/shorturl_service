@@ -474,13 +474,20 @@ from flask import make_response
 @app.route('/notfresh/rss/<string:category>')
 def get_rss_feed(category):
     fg = FeedGenerator()
+    
+    # 设置feed的基本信息，使用完整的当前URL作为feed链接
+    request_url = request.url  # 获取当前请求的完整URL
+    fg.id(request_url)
     fg.title(f'NotFresh {category} RSS Feed')
     fg.description(f'最新的{category}相关技术资讯')
-    fg.link(href=f'http://notfresh.com/notfresh/rss/{category}')
+    fg.link(href=request_url, rel='self')
     fg.language('zh-CN')
     
-    # 获取当前时间并添加东八区时区信息
-    current_time = datetime.now().astimezone()  # 自动使用系统本地时区
+    # 添加feed的其他必要信息
+    fg.author({'name': 'NotFresh Team', 'email': 'admin@notfresh.com'})
+    fg.logo('https://notfresh.com/static/logo.png')  # 可选
+    fg.subtitle('技术资讯RSS订阅')
+    fg.updated(datetime.now().astimezone())  # 设置feed更新时间
     
     # RSS条目数据
     entries = [
@@ -489,32 +496,36 @@ def get_rss_feed(category):
             "description": "GitHub Copilot推出了新的代码补全和AI辅助功能，提升开发效率...",
             "published_at": current_time - timedelta(hours=2),
             "url": "https://github.blog/2024-01-30-github-copilot-chat-beta-now-available-for-individuals/",
-            "author": "GitHub Team"
+            "author": "GitHub Team",
+            "guid": "github-copilot-2024-01-30"  # 添加唯一标识符
         },
         {
             "title": f"{category} - Stack Overflow 2023年度调查报告",
             "description": "Stack Overflow发布2023年度开发者调查报告，揭示最新技术趋势...",
             "published_at": current_time - timedelta(hours=5),
             "url": "https://survey.stackoverflow.co/2023/",
-            "author": "Stack Overflow"
+            "author": "Stack Overflow",
+            "guid": "stackoverflow-survey-2023"
         },
         {
             "title": f"{category} - Python 3.12新特性解析",
             "description": "Python 3.12版本发布，带来性能提升和新语言特性...",
             "published_at": current_time - timedelta(hours=8),
             "url": "https://docs.python.org/3.12/whatsnew/3.12.html",
-            "author": "Python Core Team"
+            "author": "Python Core Team",
+            "guid": "python-312-whatsnew"
         }
     ]
     
     for entry in entries:
         fe = fg.add_entry()
+        fe.id(entry["guid"])  # 使用唯一标识符
         fe.title(entry["title"])
         fe.description(entry["description"])
         fe.link(href=entry["url"])
         fe.author(name=entry["author"])
         fe.published(entry["published_at"])
-        fe.id(entry["url"])
+        fe.updated(entry["published_at"])  # 添加更新时间
     
     # 生成RSS feed并指定编码
     rssfeed = fg.rss_str(pretty=True, encoding='UTF-8')
