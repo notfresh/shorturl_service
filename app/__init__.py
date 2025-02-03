@@ -479,7 +479,8 @@ def get_rss_feed(category):
     fg.link(href=f'http://notfresh.com/notfresh/rss/{category}')
     fg.language('zh-CN')
     
-    current_time = datetime.now()
+    # 获取当前时间并添加东八区时区信息
+    current_time = datetime.now().astimezone()  # 自动使用系统本地时区
     
     # RSS条目数据
     entries = [
