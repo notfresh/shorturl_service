@@ -487,7 +487,10 @@ def get_rss_feed(category):
     fg.author({'name': 'NotFresh Team', 'email': 'admin@notfresh.com'})
     fg.logo('https://notfresh.com/static/logo.png')  # 可选
     fg.subtitle('技术资讯RSS订阅')
-    fg.updated(datetime.now().astimezone())  # 设置feed更新时间
+    
+    # 获取当前时间并添加时区信息
+    current_time = datetime.now().astimezone()
+    fg.updated(current_time)  # 设置feed更新时间
     
     # RSS条目数据
     entries = [
