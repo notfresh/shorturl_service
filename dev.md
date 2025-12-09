@@ -2,7 +2,6 @@
 This file is used to describe how to develop and debug the project locally.
 
 
-
 # Virutal Environment
 In order to use a virutal enviroment, 
 in Ubuntu 20, use:
