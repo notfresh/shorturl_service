@@ -85,6 +85,10 @@ def create_app(flask_config='development', **kwargs):
 
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    
+    from .sync import bp as sync_blueprint
+    app.register_blueprint(sync_blueprint, url_prefix='/api/sync')
+    
     with app.app_context():
         init_shorten_urls(None)
     return app
