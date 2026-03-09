@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐播放器 - 时间戳跳转</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .player-section {
+            margin-bottom: 30px;
+        }
+
+        .audio-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        audio {
+            width: 100%;
+            margin-bottom: 20px;
+            height: 40px;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .time-display {
+            font-size: 12px;
+            color: #666;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .progress-bar:hover .progress-fill {
+            background: linear-gradient(90deg, #5568d3, #64388f);
+        }
+
+        .duration-display {
+            font-size: 12px;
+            color: #666;
+            min-width: 45px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            min-width: 100px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .timestamps-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .timestamps-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timestamps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timestamp-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f8f8;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .timestamp-btn:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .timestamp-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .timestamp-time {
+            font-weight: 600;
+            min-width: 50px;
+            color: #667eea;
+        }
+
+        .timestamp-btn.active .timestamp-time {
+            color: white;
+        }
+
+        .timestamp-desc {
+            flex: 1;
+            margin: 0 15px;
+        }
+
+        .url-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px dashed #ddd;
+        }
+
+        .url-section label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .url-section input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        .url-section button {
+            margin-top: 8px;
+            width: 100%;
+            padding: 8px;
+        }
+
+        .marks-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .marks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .marks-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .add-mark-btn {
+            padding: 8px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-mark-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .marks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .mark-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .mark-item:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .mark-time {
+            flex-shrink: 0;
+            font-weight: 600;
+            color: #667eea;
+            min-width: 50px;
+            padding-top: 2px;
+            cursor: pointer;
+        }
+
+        .mark-time:hover {
+            text-decoration: underline;
+        }
+
+        .mark-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .mark-note {
+            font-size: 13px;
+            color: #333;
+            word-break: break-word;
+            max-height: 60px;
+            overflow: hidden;
+        }
+
+        .mark-note-input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: inherit;
+            resize: none;
+            max-height: 80px;
+        }
+
+        .mark-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mark-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mark-btn-edit {
+            background: #e8f0ff;
+            color: #667eea;
+        }
+
+        .mark-btn-edit:hover {
+            background: #d0e0ff;
+        }
+
+        .mark-btn-save {
+            background: #e8ffe8;
+            color: #2ecc71;
+        }
+
+        .mark-btn-save:hover {
+            background: #d0ffd0;
+        }
+
+        .mark-btn-delete {
+            background: #ffe8e8;
+            color: #e74c3c;
+        }
+
+        .mark-btn-delete:hover {
+            background: #ffd0d0;
+        }
+
+        .mark-btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .mark-btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .empty-marks {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .subtitles-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .subtitles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .subtitles-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .srt-upload {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .srt-upload input[type="file"] {
+            display: none;
+        }
+
+        .srt-upload-btn {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .srt-upload-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .srt-status {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .subtitles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .subtitle-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .subtitle-item:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+            transform: translateX(3px);
+        }
+
+        .subtitle-item.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .subtitle-time {
+            flex-shrink: 0;
+            font-weight: 600;
+            color: #667eea;
+            min-width: 80px;
+            font-size: 12px;
+        }
+
+        .subtitle-item.active .subtitle-time {
+            color: white;
+        }
+
+        .subtitle-text {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .subtitle-item.active .subtitle-text {
+            color: white;
+        }
+
+        .empty-subtitles {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 音乐播放器</h1>
+
+        <div class="player-section">
+            <div class="audio-info">
+                <strong>当前音乐：</strong> <span id="currentTrackName">示例歌曲</span><br>
+                <small>提示：可以在下方修改音乐URL</small>
+            </div>
+
+            <audio id="audioPlayer" controls crossorigin="anonymous">
+                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                你的浏览器不支持 HTML5 音频标签
+            </audio>
+
+            <div class="progress-container">
+                <span class="time-display" id="currentTime">0:00</span>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span class="duration-display" id="duration">0:00</span>
+            </div>
+
+            <div class="controls">
+                <button class="btn-primary" id="playBtn">▶ 播放</button>
+                <button class="btn-primary" id="pauseBtn">⏸ 暂停</button>
+                <button class="btn-secondary" id="resetBtn">⏮ 重新开始</button>
+            </div>
+        </div>
+
+        <div class="timestamps-section" id="timestampsSection" style="display: none;">
+            <div class="timestamps-title">📍 时间戳标记</div>
+            <div class="timestamps-list" id="timestampsList"></div>
+        </div>
+
+        <div class="url-section">
+            <label for="audioUrl">🔗 更改音乐URL：</label>
+            <input type="text" id="audioUrl" placeholder="输入在线MP3地址（支持CORS）">
+            <button class="btn-primary" onclick="updateAudioSource()">加载音乐</button>
+        </div>
+
+        <div class="marks-section">
+            <div class="marks-header">
+                <div class="marks-title">📌 我的标记</div>
+                <button class="add-mark-btn" onclick="addMark()">+ 添加标记</button>
+            </div>
+            <div class="marks-list" id="marksList">
+                <div class="empty-marks">暂无标记</div>
+            </div>
+        </div>
+
+        <div class="subtitles-section">
+            <div class="subtitles-header">
+                <div class="subtitles-title">📜 字幕</div>
+                <div class="srt-upload">
+                    <input type="file" id="srtFile" accept=".srt" onchange="loadSubtitles(event)">
+                    <button class="srt-upload-btn" onclick="document.getElementById('srtFile').click()">📁 加载SRT</button>
+                    <span class="srt-status" id="srtStatus">未加载</span>
+                </div>
+            </div>
+            <div class="subtitles-list" id="subtitlesList">
+                <div class="empty-subtitles">请加载SRT字幕文件</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        ═══════════════════════════════════════════════════════════════
+        🎯 增量加载（Load More）技术方案
+        ═══════════════════════════════════════════════════════════════
+        
+        【问题】
+        SRT字幕文件可能数千条。一次性渲染所有DOM会导致：
+        - 页面加载慢
+        - 内存占用大
+        
+        【解决方案 - 增量加载】
+        初始只渲染前100条，用户滚动接近底部时自动追加下一批。
+        
+        【核心原理】
+        1️⃣ 数据层：完整存储所有字幕数据在内存（200KB可接受）
+        2️⃣ DOM层：分批渲染，每批100条
+        3️⃣ 追加而非替换：用 appendChild 追加DOM，不会影响滚动位置
+        
+        【具体流程】
+        用户加载字幕
+           ↓
+        parseSRT() → subtitles = [2048条数据]  ✅ 全量在内存中
+           ↓
+        renderSubtitles() → 初始渲染第 0-99 条
+           ↓
+        用户滚动到接近底部（距底部200px）
+           ↓
+        onSubtitlesScroll() 触发
+           ↓
+        appendSubtitleBatch() 追加第 100-199 条
+           ↓
+        继续滚动，继续追加... 直到全部加载完毕
+        
+        【关键参数】
+        - BATCH_SIZE: 100（每批加载100条）
+        - 触底阈值: 200px（距底部200px时触发加载）
+        
+        【为什么不用虚拟滚动】
+        虚拟滚动通过替换 innerHTML 更新DOM，会重置滚动位置，
+        导致滚动卡住。增量加载只做 appendChild，不会影响已有内容。
+        
+        【性能指标】
+        - 初始加载：快（只渲染100条）
+        - 滚动体验：流畅，无卡顿
+        - 最终DOM：全部加载后约2000个（可接受）
+        
+        ═══════════════════════════════════════════════════════════════
+        */
+
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
+        const timestampsList = document.getElementById('timestampsList');
+        const audioUrlInput = document.getElementById('audioUrl');
+        const marksList = document.getElementById('marksList');
+        const subtitlesList = document.getElementById('subtitlesList');
+        const srtStatus = document.getElementById('srtStatus');
+
+        // 存储key
+        const MARKS_STORAGE_KEY = 'audio_player_marks';
+        
+        // 全局字幕数据
+        let subtitles = [];
+        
+        // 增量加载配置
+        const LOAD_MORE_CONFIG = {
+            BATCH_SIZE: 100,         // 每批加载100条
+            renderedCount: 0,        // 已渲染的数量
+            loading: false           // 是否正在加载
+        };
+
+        // 读取标记
+        function loadMarks() {
+            const data = localStorage.getItem(MARKS_STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        // 保存标记
+        function saveMarks(marks) {
+            localStorage.setItem(MARKS_STORAGE_KEY, JSON.stringify(marks));
+            renderMarks();
+            updateTimestamps();
+        }
+
+        // 添加标记
+        function addMark() {
+            const marks = loadMarks();
+            const time = audioPlayer.currentTime;
+            const newMark = {
+                id: Date.now(),
+                time: time,
+                note: '新标记',
+                createdAt: new Date().toLocaleString()
+            };
+            marks.push(newMark);
+            marks.sort((a, b) => a.time - b.time);
+            saveMarks(marks);
+        }
+
+        // 删除标记
+        function deleteMark(id) {
+            if (confirm('确定要删除这个标记吗？')) {
+                const marks = loadMarks().filter(m => m.id !== id);
+                saveMarks(marks);
+            }
+        }
+
+        // 编辑标记
+        function editMark(id) {
+            const marks = loadMarks();
+            const mark = marks.find(m => m.id === id);
+            if (!mark) return;
+
+            const markElement = document.getElementById(`mark-${id}`);
+            const noteElement = markElement.querySelector('.mark-note');
+            const currentNote = noteElement.textContent;
+
+            // 显示编辑模式
+            const textarea = document.createElement('textarea');
+            textarea.className = 'mark-note-input';
+            textarea.value = currentNote;
+            textarea.id = `textarea-${id}`;
+            textarea.focus();
+            textarea.select();
+
+            const actionsDiv = markElement.querySelector('.mark-actions');
+
+            // 替换note内容为textarea
+            noteElement.style.display = 'none';
+            noteElement.parentElement.insertBefore(textarea, noteElement);
+
+            // 更新按钮
+            actionsDiv.innerHTML = `
+                <button class="mark-btn mark-btn-save" onclick="saveMark(${id})">💾 保存</button>
+                <button class="mark-btn mark-btn-cancel" onclick="location.reload()">✕ 取消</button>
+            `;
+        }
+
+        // 保存编辑的标记
+        function saveMark(id) {
+            const textarea = document.getElementById(`textarea-${id}`);
+            if (!textarea) {
+                alert('编辑框已关闭');
+                return;
+            }
+            
+            const newNote = textarea.value.trim();
+            
+            if (!newNote) {
+                alert('备注不能为空');
+                return;
+            }
+
+            const marks = loadMarks();
+            const mark = marks.find(m => m.id === id);
+            if (mark) {
+                mark.note = newNote;
+                saveMarks(marks);
+            }
+        }
+
+        // 跳转到标记时间
+        function jumpToMarkTime(time) {
+            audioPlayer.currentTime = time;
+            audioPlayer.play();
+            playBtn.textContent = '⏸ 暂停中...';
+        }
+
+        // 渲染标记列表
+        function renderMarks() {
+            const marks = loadMarks();
+            
+            if (marks.length === 0) {
+                marksList.innerHTML = '<div class="empty-marks">暂无标记</div>';
+                return;
+            }
+
+            marksList.innerHTML = marks.map(mark => `
+                <div class="mark-item" id="mark-${mark.id}">
+                    <div class="mark-time" onclick="jumpToMarkTime(${mark.time})">${formatTime(mark.time)}</div>
+                    <div class="mark-content">
+                        <div class="mark-note">${escapeHtml(mark.note)}</div>
+                        <small style="color: #999; font-size: 11px;">${mark.createdAt}</small>
+                    </div>
+                    <div class="mark-actions">
+                        <button class="mark-btn mark-btn-edit" onclick="editMark(${mark.id})">✏️ 编辑</button>
+                        <button class="mark-btn mark-btn-delete" onclick="deleteMark(${mark.id})">🗑️ 删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 格式化时间
+        function formatTime(seconds) {
+            if (!isFinite(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 根据标记更新时间戳列表
+        function updateTimestamps() {
+            const marks = loadMarks();
+            const timestampsSection = document.getElementById('timestampsSection');
+            
+            // 如果没有标记，隐藏时间戳部分
+            if (marks.length === 0) {
+                timestampsSection.style.display = 'none';
+                return;
+            }
+
+            timestampsSection.style.display = 'block';
+            timestampsList.innerHTML = '';
+            
+            marks.forEach((mark) => {
+                const btn = document.createElement('button');
+                btn.className = 'timestamp-btn';
+                btn.innerHTML = `
+                    <span class="timestamp-time">${formatTime(mark.time)}</span>
+                    <span class="timestamp-desc">${escapeHtml(mark.note)}</span>
+                    <span style="font-size: 12px; color: #999;">→</span>
+                `;
+                btn.onclick = () => jumpToTimestamp(mark.time, btn);
+                timestampsList.appendChild(btn);
+            });
+        }
+
+        // 跳转到指定时间戳
+        function jumpToTimestamp(seconds, btnElement) {
+            audioPlayer.currentTime = seconds;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.timestamp-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+            
+            // 自动播放
+            audioPlayer.play();
+            playBtn.textContent = '⏸ 播放中...';
+        }
+
+        // 解析SRT文件
+        function parseSRT(content) {
+            const subtitleBlocks = content.split('\n\n');
+            const parsedSubtitles = [];
+            
+            subtitleBlocks.forEach(block => {
+                const lines = block.trim().split('\n');
+                if (lines.length >= 3) {
+                    const timeLine = lines[1];
+                    const textLines = lines.slice(2);
+                    
+                    const timeMatch = timeLine.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
+                    
+                    if (timeMatch) {
+                        const startHours = parseInt(timeMatch[1]);
+                        const startMins = parseInt(timeMatch[2]);
+                        const startSecs = parseInt(timeMatch[3]);
+                        const startMs = parseInt(timeMatch[4]);
+                        const startTime = startHours * 3600 + startMins * 60 + startSecs + startMs / 1000;
+                        
+                        const endHours = parseInt(timeMatch[5]);
+                        const endMins = parseInt(timeMatch[6]);
+                        const endSecs = parseInt(timeMatch[7]);
+                        const endMs = parseInt(timeMatch[8]);
+                        const endTime = endHours * 3600 + endMins * 60 + endSecs + endMs / 1000;
+                        
+                        parsedSubtitles.push({
+                            startTime: startTime,
+                            endTime: endTime,
+                            text: textLines.join('\n')
+                        });
+                    }
+                }
+            });
+            
+            return parsedSubtitles;
+        }
+
+        // 加载SRT字幕文件
+        function loadSubtitles(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const content = e.target.result;
+                    subtitles = parseSRT(content);
+                    
+                    if (subtitles.length === 0) {
+                        alert('未能解析任何字幕');
+                        return;
+                    }
+                    
+                    srtStatus.textContent = `已加载 ${subtitles.length} 条`;
+                    renderSubtitles();
+                } catch (error) {
+                    alert('加载字幕文件失败：' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 渲染字幕列表（增量加载）
+        function renderSubtitles() {
+            if (subtitles.length === 0) {
+                subtitlesList.innerHTML = '<div class="empty-subtitles">请加载SRT字幕文件</div>';
+                return;
+            }
+            
+            // 重置
+            subtitlesList.innerHTML = '';
+            LOAD_MORE_CONFIG.renderedCount = 0;
+            
+            // 初始加载第一批
+            appendSubtitleBatch();
+            
+            // 绑定滚动事件
+            subtitlesList.onscroll = onSubtitlesScroll;
+        }
+
+        // 追加一批字幕到列表
+        function appendSubtitleBatch() {
+            if (LOAD_MORE_CONFIG.loading) return;
+            if (LOAD_MORE_CONFIG.renderedCount >= subtitles.length) return;
+            
+            LOAD_MORE_CONFIG.loading = true;
+            
+            const start = LOAD_MORE_CONFIG.renderedCount;
+            const end = Math.min(start + LOAD_MORE_CONFIG.BATCH_SIZE, subtitles.length);
+            
+            const fragment = document.createDocumentFragment();
+            
+            for (let i = start; i < end; i++) {
+                const subtitle = subtitles[i];
+                const div = document.createElement('div');
+                div.className = 'subtitle-item';
+                div.id = `subtitle-${i}`;
+                div.dataset.index = i;
+                div.onclick = () => jumpToSubtitleTime(subtitle.startTime);
+                div.innerHTML = `
+                    <div class="subtitle-time">${formatTime(subtitle.startTime)}</div>
+                    <div class="subtitle-text">${escapeHtml(subtitle.text)}</div>
+                `;
+                fragment.appendChild(div);
+            }
+            
+            subtitlesList.appendChild(fragment);
+            LOAD_MORE_CONFIG.renderedCount = end;
+            LOAD_MORE_CONFIG.loading = false;
+        }
+
+        // 监听滚动事件 - 触底加载更多
+        function onSubtitlesScroll() {
+            const scrollTop = subtitlesList.scrollTop;
+            const scrollHeight = subtitlesList.scrollHeight;
+            const clientHeight = subtitlesList.clientHeight;
+            
+            // 距离底部 200px 时触发加载
+            if (scrollTop + clientHeight >= scrollHeight - 200) {
+                appendSubtitleBatch();
+            }
+        }
+
+        // 跳转到字幕时间
+        function jumpToSubtitleTime(time) {
+            audioPlayer.currentTime = time;
+            audioPlayer.play();
+            playBtn.textContent = '⏸ 暂停中...';
+        }
+
+        // 更新当前字幕高亮
+        function updateCurrentSubtitle() {
+            const currentTime = audioPlayer.currentTime;
+            let currentSubtitleIndex = -1;
+            
+            // 查找当前字幕
+            for (let i = 0; i < subtitles.length; i++) {
+                const subtitle = subtitles[i];
+                if (currentTime >= subtitle.startTime && currentTime < subtitle.endTime) {
+                    currentSubtitleIndex = i;
+                    break;
+                }
+                if (subtitle.startTime > currentTime) break;
+            }
+            
+            // 移除所有高亮
+            document.querySelectorAll('.subtitle-item.active').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (currentSubtitleIndex !== -1) {
+                // 如果该字幕还没渲染出来，先加载到它
+                if (currentSubtitleIndex >= LOAD_MORE_CONFIG.renderedCount) {
+                    while (LOAD_MORE_CONFIG.renderedCount <= currentSubtitleIndex) {
+                        appendSubtitleBatch();
+                    }
+                }
+                
+                const currentItem = document.getElementById(`subtitle-${currentSubtitleIndex}`);
+                if (currentItem) {
+                    currentItem.classList.add('active');
+                }
+            }
+        }
+
+        // 播放事件
+        playBtn.onclick = () => {
+            audioPlayer.play();
+            playBtn.textContent = '▶ 播放';
+        };
+
+        // 暂停事件
+        pauseBtn.onclick = () => {
+            audioPlayer.pause();
+            playBtn.textContent = '▶ 播放';
+        };
+
+        // 重新开始
+        resetBtn.onclick = () => {
+            audioPlayer.currentTime = 0;
+            audioPlayer.play();
+            playBtn.textContent = '⏸ 暂停中...';
+        };
+
+        // 更新进度条
+        audioPlayer.addEventListener('timeupdate', () => {
+            const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progressFill.style.width = percent + '%';
+            currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
+
+            // 检查是否接近某个标记
+            const marks = loadMarks();
+            const currentMark = marks.find(mark => 
+                Math.abs(audioPlayer.currentTime - mark.time) < 1
+            );
+            if (currentMark) {
+                const btns = document.querySelectorAll('.timestamp-btn');
+                btns.forEach(btn => btn.classList.remove('active'));
+                btns[marks.indexOf(currentMark)].classList.add('active');
+            }
+
+            // 更新当前字幕高亮
+            updateCurrentSubtitle();
+        });
+
+        // 更新总时长
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            durationDisplay.textContent = formatTime(audioPlayer.duration);
+        });
+
+        // 播放/暂停状态
+        audioPlayer.addEventListener('play', () => {
+            playBtn.textContent = '⏸ 暂停中...';
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            playBtn.textContent = '▶ 播放';
+        });
+
+        // 进度条点击跳转
+        progressBar.addEventListener('click', (e) => {
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audioPlayer.currentTime = percent * audioPlayer.duration;
+        });
+
+        // 更改音乐源
+        function updateAudioSource() {
+            const url = audioUrlInput.value.trim();
+            if (url) {
+                audioPlayer.src = url;
+                audioPlayer.load();
+                document.getElementById('currentTrackName').textContent = url.split('/').pop() || '自定义音乐';
+                audioUrlInput.value = '';
+            } else {
+                alert('请输入有效的URL');
+            }
+        }
+
+        // 回车更新
+        audioUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                updateAudioSource();
+            }
+        });
+
+        // 初始化
+        updateTimestamps();
+        renderMarks();
+    </script>
+</body>
+</html>
