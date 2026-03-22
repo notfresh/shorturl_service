@@ -48,7 +48,7 @@ def init_shorten_urls(urls):
                 shorten_items.append(url.shorten_url)
                 shorten_items_mapping[url.shorten_url] = url
             print("@Log __init__.py 46 init_shorten_urls the shortened items len is ", len(shorten_items))
-            print("@Log __init__.py 47 init_shorten_urls the shortened shorten_items_mapping len is ", len(shorten_items_mapping))
+            print("@Log __init__.py G init_shorten_urls the shortened shorten_items_mapping len is ", len(shorten_items_mapping))
     except Exception as e:
         # 如果表不存在，静默失败
         print(f"Warning: Could not initialize shorten_urls: {e}")
@@ -472,76 +472,76 @@ def redirect_short_url_with_prefix(short_url, short_url_prefix):
 def about():
     return render_template('about.html')
 
-from feedgen.feed import FeedGenerator
-from flask import make_response
+# from feedgen.feed import FeedGenerator
+# from flask import make_response
 
-@app.route('/notfresh/rss/<string:category>')
-def get_rss_feed(category):
-    fg = FeedGenerator()
+# @app.route('/notfresh/rss/<string:category>')
+# def get_rss_feed(category):
+#     fg = FeedGenerator()
     
-    # 设置feed的基本信息，使用完整的当前URL作为feed链接
-    request_url = request.url  # 获取当前请求的完整URL
-    fg.id(request_url)
-    fg.title(f'NotFresh {category} RSS Feed')
-    fg.description(f'最新的{category}相关技术资讯')
-    fg.link(href=request_url, rel='self')
-    fg.language('zh-CN')
+#     # 设置feed的基本信息，使用完整的当前URL作为feed链接
+#     request_url = request.url  # 获取当前请求的完整URL
+#     fg.id(request_url)
+#     fg.title(f'NotFresh {category} RSS Feed')
+#     fg.description(f'最新的{category}相关技术资讯')
+#     fg.link(href=request_url, rel='self')
+#     fg.language('zh-CN')
     
-    # 添加feed的其他必要信息
-    fg.author({'name': 'NotFresh Team', 'email': 'admin@notfresh.com'})
-    fg.logo('https://notfresh.com/static/logo.png')  # 可选
-    fg.subtitle('技术资讯RSS订阅')
+#     # 添加feed的其他必要信息
+#     fg.author({'name': 'NotFresh Team', 'email': 'admin@notfresh.com'})
+#     fg.logo('https://notfresh.com/static/logo.png')  # 可选
+#     fg.subtitle('技术资讯RSS订阅')
     
-    # 获取当前时间并添加时区信息
-    current_time = datetime.now().astimezone()
-    fg.updated(current_time)  # 设置feed更新时间
+#     # 获取当前时间并添加时区信息
+#     current_time = datetime.now().astimezone()
+#     fg.updated(current_time)  # 设置feed更新时间
     
-    # RSS条目数据
-    entries = [
-        {
-            "title": f"{category} - GitHub Copilot 新功能发布",
-            "description": "GitHub Copilot推出了新的代码补全和AI辅助功能，提升开发效率...",
-            "published_at": current_time - timedelta(hours=2),
-            "url": "https://github.blog/2024-01-30-github-copilot-chat-beta-now-available-for-individuals/",
-            "author": "GitHub Team",
-            "guid": "github-copilot-2024-01-30"  # 添加唯一标识符
-        },
-        {
-            "title": f"{category} - Stack Overflow 2023年度调查报告",
-            "description": "Stack Overflow发布2023年度开发者调查报告，揭示最新技术趋势...",
-            "published_at": current_time - timedelta(hours=5),
-            "url": "https://survey.stackoverflow.co/2023/",
-            "author": "Stack Overflow",
-            "guid": "stackoverflow-survey-2023"
-        },
-        {
-            "title": f"{category} - Python 3.12新特性解析",
-            "description": "Python 3.12版本发布，带来性能提升和新语言特性...",
-            "published_at": current_time - timedelta(hours=8),
-            "url": "https://docs.python.org/3.12/whatsnew/3.12.html",
-            "author": "Python Core Team",
-            "guid": "python-312-whatsnew"
-        }
-    ]
+#     # RSS条目数据
+#     entries = [
+#         {
+#             "title": f"{category} - GitHub Copilot 新功能发布",
+#             "description": "GitHub Copilot推出了新的代码补全和AI辅助功能，提升开发效率...",
+#             "published_at": current_time - timedelta(hours=2),
+#             "url": "https://github.blog/2024-01-30-github-copilot-chat-beta-now-available-for-individuals/",
+#             "author": "GitHub Team",
+#             "guid": "github-copilot-2024-01-30"  # 添加唯一标识符
+#         },
+#         {
+#             "title": f"{category} - Stack Overflow 2023年度调查报告",
+#             "description": "Stack Overflow发布2023年度开发者调查报告，揭示最新技术趋势...",
+#             "published_at": current_time - timedelta(hours=5),
+#             "url": "https://survey.stackoverflow.co/2023/",
+#             "author": "Stack Overflow",
+#             "guid": "stackoverflow-survey-2023"
+#         },
+#         {
+#             "title": f"{category} - Python 3.12新特性解析",
+#             "description": "Python 3.12版本发布，带来性能提升和新语言特性...",
+#             "published_at": current_time - timedelta(hours=8),
+#             "url": "https://docs.python.org/3.12/whatsnew/3.12.html",
+#             "author": "Python Core Team",
+#             "guid": "python-312-whatsnew"
+#         }
+#     ]
     
-    for entry in entries:
-        fe = fg.add_entry()
-        fe.id(entry["guid"])  # 使用唯一标识符
-        fe.title(entry["title"])
-        fe.description(entry["description"])
-        fe.link(href=entry["url"])
-        fe.author(name=entry["author"])
-        fe.published(entry["published_at"])
-        fe.updated(entry["published_at"])  # 添加更新时间
+#     for entry in entries:
+#         fe = fg.add_entry()
+#         fe.id(entry["guid"])  # 使用唯一标识符
+#         fe.title(entry["title"])
+#         fe.description(entry["description"])
+#         fe.link(href=entry["url"])
+#         fe.author(name=entry["author"])
+#         fe.published(entry["published_at"])
+#         fe.updated(entry["published_at"])  # 添加更新时间
     
-    # 生成RSS feed并指定编码
-    rssfeed = fg.rss_str(pretty=True, encoding='UTF-8')
+#     # 生成RSS feed并指定编码
+#     rssfeed = fg.rss_str(pretty=True, encoding='UTF-8')
     
-    # 创建响应并设置正确的Content-Type和编码
-    response = make_response(rssfeed)
-    response.headers.set('Content-Type', 'application/rss+xml; charset=UTF-8')
+#     # 创建响应并设置正确的Content-Type和编码
+#     response = make_response(rssfeed)
+#     response.headers.set('Content-Type', 'application/rss+xml; charset=UTF-8')
     
-    return response
+#     return response
 
 
 
