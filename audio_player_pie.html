@@ -1093,6 +1093,15 @@
                 const currentItem = document.getElementById(`subtitle-${currentSubtitleIndex}`);
                 if (currentItem) {
                     currentItem.classList.add('active');
+                    // 自动滚动到当前字幕
+                    const list = subtitlesList;
+                    const itemTop = currentItem.offsetTop;
+                    const itemBottom = itemTop + currentItem.offsetHeight;
+                    const listTop = list.scrollTop;
+                    const listBottom = listTop + list.clientHeight;
+                    if (itemTop < listTop || itemBottom > listBottom) {
+                        list.scrollTop = itemTop - list.clientHeight / 2;
+                    }
                 }
             }
         }
@@ -1117,17 +1126,6 @@
             const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
             progressFill.style.width = percent + '%';
             currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
-
-            // 检查是否接近某个标记
-            const marks = loadMarks();
-            const currentMark = marks.find(mark => 
-                Math.abs(audioPlayer.currentTime - mark.time) < 1
-            );
-            if (currentMark) {
-                const btns = document.querySelectorAll('.timestamp-btn');
-                btns.forEach(btn => btn.classList.remove('active'));
-                btns[marks.indexOf(currentMark)].classList.add('active');
-            }
 
             // 更新当前字幕高亮
             updateCurrentSubtitle();
