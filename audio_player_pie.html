@@ -47,48 +47,6 @@
             height: 40px;
         }
 
-        .progress-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .time-display {
-            font-size: 12px;
-            color: #666;
-            min-width: 45px;
-            text-align: right;
-        }
-
-        .progress-bar {
-            flex: 1;
-            height: 6px;
-            background: #e0e0e0;
-            border-radius: 3px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 3px;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
-        .progress-bar:hover .progress-fill {
-            background: linear-gradient(90deg, #5568d3, #64388f);
-        }
-
-        .duration-display {
-            font-size: 12px;
-            color: #666;
-            min-width: 45px;
-        }
-
         .controls {
             display: flex;
             gap: 10px;
@@ -496,17 +454,6 @@
                 min-width: 80px;
             }
 
-            .progress-container {
-                gap: 8px;
-                margin-bottom: 15px;
-            }
-
-            .time-display,
-            .duration-display {
-                font-size: 11px;
-                min-width: 40px;
-            }
-
             .timestamp-btn {
                 padding: 10px 12px;
                 font-size: 13px;
@@ -623,10 +570,6 @@
                 font-size: 12px;
             }
 
-            .progress-container {
-                gap: 6px;
-            }
-
             audio {
                 height: 32px;
                 margin-bottom: 12px;
@@ -673,14 +616,6 @@
                 <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
                 你的浏览器不支持 HTML5 音频标签
             </audio>
-
-            <div class="progress-container">
-                <span class="time-display" id="currentTime">0:00</span>
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <span class="duration-display" id="duration">0:00</span>
-            </div>
 
             <div class="controls">
                 <button class="btn-primary" id="playPauseBtn">▶ 播放</button>
@@ -775,16 +710,15 @@
         const audioPlayer = document.getElementById('audioPlayer');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const resetBtn = document.getElementById('resetBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressFill = document.getElementById('progressFill');
-        const currentTimeDisplay = document.getElementById('currentTime');
-        const durationDisplay = document.getElementById('duration');
         const marksList = document.getElementById('marksList');
         const subtitlesList = document.getElementById('subtitlesList');
         const srtStatus = document.getElementById('srtStatus');
 
-        // 存储key
-        const MARKS_STORAGE_KEY = 'audio_player_marks';
+        // 存储key（按节目隔离）
+        let currentEpisodeIdx = null;
+        function getMarksKey() {
+            return currentEpisodeIdx !== null ? `audio_player_marks_ep${currentEpisodeIdx}` : null;
+        }
         
         // 全局字幕数据
         let subtitles = [];
@@ -798,13 +732,17 @@
 
         // 读取标记
         function loadMarks() {
-            const data = localStorage.getItem(MARKS_STORAGE_KEY);
+            const key = getMarksKey();
+            if (!key) return [];
+            const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : [];
         }
 
         // 保存标记
         function saveMarks(marks) {
-            localStorage.setItem(MARKS_STORAGE_KEY, JSON.stringify(marks));
+            const key = getMarksKey();
+            if (!key) return;
+            localStorage.setItem(key, JSON.stringify(marks));
             renderMarks();
         }
 
@@ -1031,7 +969,7 @@
                 div.className = 'subtitle-item';
                 div.id = `subtitle-${i}`;
                 div.dataset.index = i;
-                div.onclick = () => jumpToSubtitleTime(subtitle.startTime);
+                div.onclick = () => jumpToSubtitleTime(i, subtitle.startTime);
                 div.innerHTML = `
                     <div class="subtitle-time">${formatTime(subtitle.startTime)}</div>
                     <div class="subtitle-text">${escapeHtml(subtitle.text)}</div>
@@ -1057,7 +995,13 @@
         }
 
         // 跳转到字幕时间
-        function jumpToSubtitleTime(time) {
+        let clickedSubtitle = false;
+        function jumpToSubtitleTime(index, time) {
+            clickedSubtitle = true;
+            // 立即高亮点击的字幕，不等 timeupdate
+            document.querySelectorAll('.subtitle-item.active').forEach(el => el.classList.remove('active'));
+            const item = document.getElementById(`subtitle-${index}`);
+            if (item) item.classList.add('active');
             audioPlayer.currentTime = time;
             audioPlayer.play();
         }
@@ -1093,14 +1037,10 @@
                 const currentItem = document.getElementById(`subtitle-${currentSubtitleIndex}`);
                 if (currentItem) {
                     currentItem.classList.add('active');
-                    // 自动滚动到当前字幕
-                    const list = subtitlesList;
-                    const itemTop = currentItem.offsetTop;
-                    const itemBottom = itemTop + currentItem.offsetHeight;
-                    const listTop = list.scrollTop;
-                    const listBottom = listTop + list.clientHeight;
-                    if (itemTop < listTop || itemBottom > listBottom) {
-                        list.scrollTop = itemTop - list.clientHeight / 2;
+                    // 拖动进度条时滚动字幕（点击字幕时不滚动）
+                    if (seekScrollPending) {
+                        seekScrollPending = false;
+                        subtitlesList.scrollTop = currentItem.offsetTop - (subtitlesList.clientHeight - currentItem.offsetHeight) / 2;
                     }
                 }
             }
@@ -1121,19 +1061,9 @@
             audioPlayer.play();
         };
 
-        // 更新进度条
+        // 更新进度和字幕
         audioPlayer.addEventListener('timeupdate', () => {
-            const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-            progressFill.style.width = percent + '%';
-            currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
-
-            // 更新当前字幕高亮
             updateCurrentSubtitle();
-        });
-
-        // 更新总时长
-        audioPlayer.addEventListener('loadedmetadata', () => {
-            durationDisplay.textContent = formatTime(audioPlayer.duration);
         });
 
         // 播放/暂停状态
@@ -1147,11 +1077,17 @@
             document.querySelector('.episode-selector').classList.remove('playing');
         });
 
-        // 进度条点击跳转
-        progressBar.addEventListener('click', (e) => {
-            const rect = progressBar.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            audioPlayer.currentTime = percent * audioPlayer.duration;
+        // 监听任何 seek 操作（原生控件拖动 或 自定义进度条点击）
+        let seekScrollPending = false;
+        audioPlayer.addEventListener('seeked', () => {
+            if (clickedSubtitle) {
+                // 点击字幕触发的 seek，不滚动
+                clickedSubtitle = false;
+            } else {
+                // 拖动进度条触发的 seek，滚动字幕
+                seekScrollPending = true;
+                updateCurrentSubtitle();
+            }
         });
 
         // 从URL加载字幕
@@ -1184,7 +1120,8 @@
             const select = document.getElementById('episodeSelect');
             const idx = select.value;
             if (idx === '') return;
-            const ep = EPISODES[parseInt(idx)];
+            currentEpisodeIdx = parseInt(idx);
+            const ep = EPISODES[currentEpisodeIdx];
 
             // 加载音频并自动播放
             audioPlayer.src = ep.audioUrl;
@@ -1200,6 +1137,9 @@
 
             // 加载字幕
             loadSubtitleFromUrl(ep.srtUrl);
+
+            // 渲染当前节目的标记
+            renderMarks();
         }
 
         // 初始化节目选择器
@@ -1216,7 +1156,6 @@
 
         // 初始化
         initEpisodeSelector();
-        renderMarks();
     </script>
 </body>
 </html>
