@@ -41,15 +41,6 @@
             margin-bottom: 30px;
         }
 
-        .audio-info {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #666;
-        }
-
         audio {
             width: 100%;
             margin-bottom: 20px;
@@ -202,37 +193,6 @@
         .timestamp-desc {
             flex: 1;
             margin: 0 15px;
-        }
-
-        .url-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            border: 1px dashed #ddd;
-        }
-
-        .url-section label {
-            display: block;
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .url-section input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            font-family: monospace;
-        }
-
-        .url-section button {
-            margin-top: 8px;
-            width: 100%;
-            padding: 8px;
         }
 
         .marks-section {
@@ -655,21 +615,6 @@
                 margin: 0 10px;
             }
 
-            .url-section {
-                margin-top: 15px;
-                padding: 12px;
-            }
-
-            .url-section input {
-                padding: 10px;
-                font-size: 13px;
-            }
-
-            .url-section button {
-                margin-top: 8px;
-                padding: 10px;
-            }
-
             .marks-section,
             .subtitles-section {
                 margin-top: 20px;
@@ -750,15 +695,6 @@
                 gap: 8px;
             }
 
-            .audio-info {
-                font-size: 12px;
-                padding: 12px;
-            }
-
-            .audio-info small {
-                display: block;
-                margin-top: 5px;
-            }
         }
 
         /* 📱 超小屏幕（< 480px） */
@@ -802,10 +738,6 @@
                 max-height: 200px;
             }
 
-            .url-section {
-                padding: 10px;
-            }
-
             .mark-actions {
                 gap: 4px;
             }
@@ -816,56 +748,7 @@
             }
         }
 
-        /* 🌓 深色模式支持 */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            }
 
-            .container {
-                background: #0f3460;
-                color: #eee;
-            }
-
-            h1 {
-                color: #eee;
-            }
-
-            .audio-info {
-                background: #1a1a2e;
-                color: #aaa;
-            }
-
-            .timestamp-btn,
-            .mark-item,
-            .subtitle-item {
-                background: #1a1a2e;
-                border-color: #333;
-                color: #eee;
-            }
-
-            .timestamp-btn:hover,
-            .mark-item:hover,
-            .subtitle-item:hover {
-                background: #253449;
-                border-color: #667eea;
-            }
-
-            .url-section {
-                background: #1a1a2e;
-                border-color: #333;
-            }
-
-            .url-section input {
-                background: #0f3460;
-                border-color: #333;
-                color: #eee;
-            }
-
-            .progress-bar {
-                background: #333;
-            }
-        }
     </style>
 </head>
 <body>
@@ -884,11 +767,6 @@
         </div>
 
         <div class="player-section">
-            <div class="audio-info">
-                <strong>当前音乐：</strong> <span id="currentTrackName">示例歌曲</span><br>
-                <small>提示：可以在下方修改音乐URL</small>
-            </div>
-
             <audio id="audioPlayer" controls crossorigin="anonymous">
                 <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
                 你的浏览器不支持 HTML5 音频标签
@@ -911,12 +789,6 @@
         <div class="timestamps-section" id="timestampsSection" style="display: none;">
             <div class="timestamps-title">📍 时间戳标记</div>
             <div class="timestamps-list" id="timestampsList"></div>
-        </div>
-
-        <div class="url-section">
-            <label for="audioUrl">🔗 更改音乐URL：</label>
-            <input type="text" id="audioUrl" placeholder="输入在线MP3地址（支持CORS）">
-            <button class="btn-primary" onclick="updateAudioSource()">加载音乐</button>
         </div>
 
         <div class="marks-section">
@@ -1011,7 +883,6 @@
         const currentTimeDisplay = document.getElementById('currentTime');
         const durationDisplay = document.getElementById('duration');
         const timestampsList = document.getElementById('timestampsList');
-        const audioUrlInput = document.getElementById('audioUrl');
         const marksList = document.getElementById('marksList');
         const subtitlesList = document.getElementById('subtitlesList');
         const srtStatus = document.getElementById('srtStatus');
@@ -1437,26 +1308,6 @@
             audioPlayer.currentTime = percent * audioPlayer.duration;
         });
 
-        // 更改音乐源
-        function updateAudioSource() {
-            const url = audioUrlInput.value.trim();
-            if (url) {
-                audioPlayer.src = url;
-                audioPlayer.load();
-                document.getElementById('currentTrackName').textContent = url.split('/').pop() || '自定义音乐';
-                audioUrlInput.value = '';
-            } else {
-                alert('请输入有效的URL');
-            }
-        }
-
-        // 回车更新
-        audioUrlInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                updateAudioSource();
-            }
-        });
-
         // 从URL加载字幕
         async function loadSubtitleFromUrl(url) {
             console.log('[SRT] 开始加载:', url);
@@ -1489,10 +1340,13 @@
             if (idx === '') return;
             const ep = EPISODES[parseInt(idx)];
 
-            // 加载音频
+            // 加载音频并自动播放
             audioPlayer.src = ep.audioUrl;
             audioPlayer.load();
-            document.getElementById('currentTrackName').textContent = ep.title;
+            audioPlayer.addEventListener('canplay', function playWhenReady() {
+                audioPlayer.removeEventListener('canplay', playWhenReady);
+                audioPlayer.play().catch(() => {});
+            });
             document.getElementById('nowPlayingTitle').textContent = ep.title;
             document.getElementById('nowPlayingBar').classList.add('visible');
             document.getElementById('nowPlayingDot').classList.add('paused');
