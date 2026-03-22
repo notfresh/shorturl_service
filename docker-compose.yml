@@ -38,6 +38,8 @@ services:
     volumes:
     - ./config/nginx:/etc/nginx/conf.d
     - ./config/https-cert:/etc/nginx/certs
+    - ./audio_player_pie.html:/srv/static/audio_player_pie.html:ro
+    - ./Podcast-Subtitle:/srv/static/Podcast-Subtitle:ro
     depends_on:
     - app
 #    - redis

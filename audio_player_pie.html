@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音乐播放器 - 时间戳跳转</title>
+    <title>后互联网时代的乱弹-带字幕</title>
     <style>
         * {
             margin: 0;
@@ -506,6 +506,93 @@
             font-size: 13px;
         }
 
+        /* 节目选择器 */
+        .episode-selector {
+            margin-bottom: 25px;
+            padding: 16px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .episode-selector label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .episode-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            background: white;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+            transition: border-color 0.2s ease;
+        }
+
+        .episode-select:hover {
+            border-color: #667eea;
+        }
+
+        .episode-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .episode-selector.playing {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .now-playing-bar {
+            display: none;
+            margin-top: 10px;
+            padding: 7px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .now-playing-bar.visible {
+            display: flex;
+        }
+
+        .now-playing-dot {
+            width: 8px;
+            height: 8px;
+            background: #a8f0c6;
+            border-radius: 50%;
+            flex-shrink: 0;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .now-playing-dot.paused {
+            animation: none;
+            background: #ccc;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
         /* 📱 手机适配 */
         @media (max-width: 768px) {
             body {
@@ -783,7 +870,18 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎵 音乐播放器</h1>
+        <h1>🎵 后互联网时代的乱弹-带字幕</h1>
+
+        <div class="episode-selector">
+            <label for="episodeSelect">🎙️ 选择节目</label>
+            <select id="episodeSelect" class="episode-select">
+                <option value="">-- 请选择一期节目 --</option>
+            </select>
+            <div class="now-playing-bar" id="nowPlayingBar">
+                <div class="now-playing-dot" id="nowPlayingDot"></div>
+                <span id="nowPlayingTitle">正在播放</span>
+            </div>
+        </div>
 
         <div class="player-section">
             <div class="audio-info">
@@ -895,6 +993,15 @@
         
         ═══════════════════════════════════════════════════════════════
         */
+
+        // 节目数据（来自 pie-podcast-nav-v2.csv）
+        const EPISODES = [
+            { title: "第204期 千问与玄学", audioUrl: "https://cdn2.wavpub.com/hosting.wavpub.cn/wp-content/uploads/sites/28/2026/03/pie-ep204.mp3", srtUrl: "Podcast-Subtitle/pie-srt/v2/pie-ep204.mp3.srt" },
+            { title: "第203期 天下一家", audioUrl: "https://cdn2.wavpub.com/hosting.wavpub.cn/wp-content/uploads/sites/28/2026/03/pie-ep203.mp3", srtUrl: "Podcast-Subtitle/pie-srt/v2/pie-ep203.mp3.srt" },
+            { title: "第202期 浓浓的年味儿", audioUrl: "https://cdn2.wavpub.com/hosting.wavpub.cn/wp-content/uploads/sites/28/2026/02/pie-ep202.mp3", srtUrl: "Podcast-Subtitle/pie-srt/v2/pie-ep202.mp3.srt" },
+            { title: "第201期 AI时代的开源", audioUrl: "https://cdn2.wavpub.com/hosting.wavpub.cn/wp-content/uploads/sites/28/2026/02/pie-ep201.mp3", srtUrl: "Podcast-Subtitle/pie-srt/v2/pie-ep201.mp3.srt" },
+            { title: "第200期 进化", audioUrl: "https://cdn2.wavpub.com/hosting.wavpub.cn/wp-content/uploads/sites/28/2026/02/pie-ep200.mp3", srtUrl: "Podcast-Subtitle/pie-srt/v2/pie-ep200.mp3.srt" },
+        ];
 
         const audioPlayer = document.getElementById('audioPlayer');
         const playPauseBtn = document.getElementById('playPauseBtn');
@@ -1310,10 +1417,17 @@
         // 播放/暂停状态
         audioPlayer.addEventListener('play', () => {
             playPauseBtn.textContent = '⏸ 暂停';
+            const bar = document.getElementById('nowPlayingBar');
+            const dot = document.getElementById('nowPlayingDot');
+            bar.classList.add('visible');
+            dot.classList.remove('paused');
+            document.querySelector('.episode-selector').classList.add('playing');
         });
 
         audioPlayer.addEventListener('pause', () => {
             playPauseBtn.textContent = '▶ 播放';
+            document.getElementById('nowPlayingDot').classList.add('paused');
+            document.querySelector('.episode-selector').classList.remove('playing');
         });
 
         // 进度条点击跳转
@@ -1343,7 +1457,68 @@
             }
         });
 
+        // 从URL加载字幕
+        async function loadSubtitleFromUrl(url) {
+            console.log('[SRT] 开始加载:', url);
+            srtStatus.textContent = '加载中...';
+            subtitlesList.innerHTML = '<div class="empty-subtitles">字幕加载中...</div>';
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status} - ${url}`);
+                const text = await res.text();
+                subtitles = parseSRT(text);
+                if (subtitles.length === 0) {
+                    srtStatus.textContent = '解析失败';
+                    subtitlesList.innerHTML = '<div class="empty-subtitles">未能解析字幕</div>';
+                    return;
+                }
+                console.log('[SRT] 加载成功:', subtitles.length, '条');
+                srtStatus.textContent = `已加载 ${subtitles.length} 条`;
+                renderSubtitles();
+            } catch (err) {
+                console.error('[SRT] 加载失败:', err);
+                srtStatus.textContent = '加载失败';
+                subtitlesList.innerHTML = `<div class="empty-subtitles">字幕加载失败：${err.message}<br><small style="color:#bbb">请通过本地服务器访问（如 python -m http.server 8000）</small></div>`;
+            }
+        }
+
+        // 选集切换
+        function onEpisodeChange() {
+            const select = document.getElementById('episodeSelect');
+            const idx = select.value;
+            if (idx === '') return;
+            const ep = EPISODES[parseInt(idx)];
+
+            // 加载音频
+            audioPlayer.src = ep.audioUrl;
+            audioPlayer.load();
+            document.getElementById('currentTrackName').textContent = ep.title;
+            document.getElementById('nowPlayingTitle').textContent = ep.title;
+            document.getElementById('nowPlayingBar').classList.add('visible');
+            document.getElementById('nowPlayingDot').classList.add('paused');
+
+            // 重置字幕
+            subtitles = [];
+            LOAD_MORE_CONFIG.renderedCount = 0;
+
+            // 加载字幕
+            loadSubtitleFromUrl(ep.srtUrl);
+        }
+
+        // 初始化节目选择器
+        function initEpisodeSelector() {
+            const select = document.getElementById('episodeSelect');
+            EPISODES.forEach((ep, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = ep.title;
+                select.appendChild(option);
+            });
+            select.addEventListener('change', onEpisodeChange);
+        }
+
         // 初始化
+        initEpisodeSelector();
         updateTimestamps();
         renderMarks();
     </script>
