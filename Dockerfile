@@ -19,5 +19,7 @@ RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 # copy the source code file to  code directory
 ADD . /code/
 
-# RUN python manage.py db upgrade
+# 初始化并拉取 git submodule（Podcast-Subtitle）
+# RUN apt-get update && apt-get install -y git && \
+#     git submodule update --init --recursive
 
